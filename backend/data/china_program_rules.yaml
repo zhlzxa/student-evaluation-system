@@ -1,0 +1,57 @@
+region: CN
+entry_year: 2026/27
+degree_type: bachelor_4y_moe_recognized
+
+# Thresholds for different scenarios
+thresholds:
+  # Universities in UCL list without special annotations
+  in_ucl_list_default:
+    "2:1": 85
+    "2:2": 80
+    "first": 90
+  
+  # Universities in UCL list with ** (double star) annotation
+  in_ucl_list_double_star:
+    # Computer Science and Technology majors
+    cs_tech:
+      "2:1": 85
+      "2:2": 80
+      "first": 90
+    # Non-Computer Science and Technology majors
+    non_cs_tech:
+      "2:1": 90
+      "2:2": 85
+      "first": 95
+  
+  # Universities not in UCL list but recognized by Chinese Ministry of Education
+  outside_ucl_list:
+    "2:1": 90
+    "2:2": 85
+    "first": 95
+
+# Institutions that should be redirected to Hong Kong (SAR) rules
+star_redirect_institutions:
+  - "Beijing Normal University-Hong Kong Baptist University United International College"
+  - "The Chinese University of Hong Kong, Shenzhen"
+
+# Computer Science and Technology related majors (for double_star rule application)
+cs_tech_majors:
+  - "Computer Science and Technology"
+  - "计算机科学与技术"
+  - "Computer Science"
+  - "计算机科学"
+  - "Software Engineering" 
+  - "软件工程"
+  - "Information Technology"
+  - "信息技术"
+
+# Notes and metadata
+notes: |
+  Based on UCL official requirements for 2026/27 entry.
+  - Universities marked with ** have special requirements based on major field
+  - Universities marked with * are redirected to Hong Kong (SAR) requirements
+  - All percentages are weighted average marks
+  - Minimum requirements do not guarantee admission
+
+source_url: "https://www.ucl.ac.uk/prospective-students/international/graduate-equivalent-international-qualifications-202627"
+last_updated: "2025-01-01"

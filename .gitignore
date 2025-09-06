@@ -1,0 +1,67 @@
+# Environment variables (IMPORTANT: Add .env to avoid committing secrets)
+.env
+.env.*
+!.env.example
+
+# Python
+*.pyc
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+*.egg-info/
+.tox/
+.coverage
+coverage.xml
+htmlcov/
+.cache/
+celerybeat-schedule*
+celerybeat.pid
+
+# JavaScript/TypeScript/Node.js
+node_modules/
+.next/
+out/
+dist/
+build/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database files
+*.db
+*.sqlite*
+
+# Storage and temp files
+storage/
+application_materials/
+.temp/
+temp/
+tmp/
+*.tmp
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS generated files
+Thumbs.db
+.DS_Store?
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Docker
+.dockerignore
+
+# Logs
+logs/
+*.log

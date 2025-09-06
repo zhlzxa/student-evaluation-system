@@ -1,0 +1,447 @@
+[
+  {
+    "canonical": "Beihang University",
+    "aliases": ["BUAA", "Beijing University of Aeronautics and Astronautics", "北京航空航天大学", "北航"],
+    "flag": null
+  },
+  {
+    "canonical": "Beijing Foreign Studies University",
+    "aliases": ["BFSU", "北京外国语大学", "北外"],
+    "flag": null
+  },
+  {
+    "canonical": "Beijing Forestry University",
+    "aliases": ["BFU", "北京林业大学"],
+    "flag": null
+  },
+  {
+    "canonical": "Beijing Institute of Technology",
+    "aliases": ["BIT", "北京理工大学", "北理工"],
+    "flag": null
+  },
+  {
+    "canonical": "Beijing Jiaotong University",
+    "aliases": ["BJTU", "Beifang Jiaotong University", "Northern Jiaotong University", "北京交通大学", "北方交通大学"],
+    "flag": null
+  },
+  {
+    "canonical": "Beijing Normal University",
+    "aliases": ["BNU", "北京师范大学", "北师大"],
+    "flag": "star"
+  },
+  {
+    "canonical": "Beijing University of Chemical Technology",
+    "aliases": ["BUCT", "北京化工大学"],
+    "flag": null
+  },
+  {
+    "canonical": "Beijing University of Chinese Medicine",
+    "aliases": ["BUCM", "北京中医药大学"],
+    "flag": null
+  },
+  {
+    "canonical": "Beijing University of Posts and Telecommunications",
+    "aliases": ["BUPT", "北京邮电大学", "北邮"],
+    "flag": null
+  },
+  {
+    "canonical": "Central Conservatory of Music",
+    "aliases": ["中央音乐学院", "央音"],
+    "flag": null
+  },
+  {
+    "canonical": "Central South University",
+    "aliases": ["CSU", "中南大学"],
+    "flag": null
+  },
+  {
+    "canonical": "Central University of Finance and Economics",
+    "aliases": ["CUFE", "中央财经大学", "央财"],
+    "flag": null
+  },
+  {
+    "canonical": "Chang'an University",
+    "aliases": ["CHD", "长安大学"],
+    "flag": null
+  },
+  {
+    "canonical": "China Agricultural University",
+    "aliases": ["CAU", "中国农业大学", "中农大"],
+    "flag": null
+  },
+  {
+    "canonical": "China Pharmaceutical University",
+    "aliases": ["CPU", "中国药科大学"],
+    "flag": null
+  },
+  {
+    "canonical": "China University of Geosciences, Beijing",
+    "aliases": ["CUGB", "中国地质大学(北京)", "地大北京"],
+    "flag": null
+  },
+  {
+    "canonical": "China University of Geosciences, Wuhan",
+    "aliases": ["CUGW", "中国地质大学(武汉)", "地大武汉"],
+    "flag": null
+  },
+  {
+    "canonical": "China University of Mining and Technology - Xuzhou",
+    "aliases": ["CUMT", "中国矿业大学", "矿大徐州"],
+    "flag": null
+  },
+  {
+    "canonical": "China University of Mining and Technology - Beijing",
+    "aliases": ["CUMTB", "中国矿业大学(北京)", "矿大北京"],
+    "flag": null
+  },
+  {
+    "canonical": "China University of Petroleum - Beijing",
+    "aliases": ["CUPB", "中国石油大学(北京)", "石大北京"],
+    "flag": null
+  },
+  {
+    "canonical": "China University of Petroleum - East China",
+    "aliases": ["UPC", "CUPC", "中国石油大学(华东)", "石大华东"],
+    "flag": null
+  },
+  {
+    "canonical": "China University of Political Science and Law",
+    "aliases": ["CUPL", "中国政法大学", "法大"],
+    "flag": null
+  },
+  {
+    "canonical": "Chinese Academy of Sciences",
+    "aliases": ["CAS", "中科院", "中国科学院"],
+    "flag": null
+  },
+  {
+    "canonical": "Chongqing University",
+    "aliases": ["CQU", "重庆大学", "重大"],
+    "flag": null
+  },
+  {
+    "canonical": "Communication University of China",
+    "aliases": ["CUC", "中国传媒大学", "传媒大学"],
+    "flag": null
+  },
+  {
+    "canonical": "Dalian University of Technology",
+    "aliases": ["DUT", "大连理工大学", "大工"],
+    "flag": null
+  },
+  {
+    "canonical": "Donghua University",
+    "aliases": ["DHU", "东华大学"],
+    "flag": null
+  },
+  {
+    "canonical": "East China Normal University",
+    "aliases": ["ECNU", "华东师范大学", "华师大"],
+    "flag": null
+  },
+  {
+    "canonical": "East China University of Science and Technology",
+    "aliases": ["ECUST", "华东理工大学", "华理"],
+    "flag": null
+  },
+  {
+    "canonical": "Fudan University",
+    "aliases": ["FDU", "复旦大学", "复旦"],
+    "flag": null
+  },
+  {
+    "canonical": "Harbin Institute of Technology",
+    "aliases": ["HIT", "哈尔滨工业大学", "哈工大"],
+    "flag": null
+  },
+  {
+    "canonical": "Hefei University of Technology",
+    "aliases": ["HFUT", "合肥工业大学", "合工大"],
+    "flag": null
+  },
+  {
+    "canonical": "Hohai University",
+    "aliases": ["HHU", "河海大学"],
+    "flag": null
+  },
+  {
+    "canonical": "Huazhong Agricultural University",
+    "aliases": ["HZAU", "Central China Agricultural University", "华中农业大学", "华农"],
+    "flag": null
+  },
+  {
+    "canonical": "Huazhong Normal University",
+    "aliases": ["CCNU", "Central China Normal University", "华中师范大学", "华师"],
+    "flag": null
+  },
+  {
+    "canonical": "Huazhong University of Science & Technology",
+    "aliases": ["HUST", "华中科技大学", "华科"],
+    "flag": null
+  },
+  {
+    "canonical": "Hunan University",
+    "aliases": ["HNU", "湖南大学", "湖大"],
+    "flag": null
+  },
+  {
+    "canonical": "Jiangnan University",
+    "aliases": ["JNU", "江南大学"],
+    "flag": null
+  },
+  {
+    "canonical": "Jilin University",
+    "aliases": ["JLU", "吉林大学", "吉大"],
+    "flag": null
+  },
+  {
+    "canonical": "Lanzhou University",
+    "aliases": ["LZU", "兰州大学", "兰大"],
+    "flag": null
+  },
+  {
+    "canonical": "Minzu University of China",
+    "aliases": ["MUC", "中央民族大学", "民大"],
+    "flag": null
+  },
+  {
+    "canonical": "Nanhang Jincheng College",
+    "aliases": ["南航金城学院", "Jincheng College of Nanjing University of Aeronautics and Astronautics"],
+    "flag": "double_star"
+  },
+  {
+    "canonical": "Nanjing Agricultural University",
+    "aliases": ["NAU", "南京农业大学", "南农"],
+    "flag": null
+  },
+  {
+    "canonical": "Nanjing University",
+    "aliases": ["NJU", "南京大学", "南大"],
+    "flag": null
+  },
+  {
+    "canonical": "Nanjing University of Science and Technology",
+    "aliases": ["NJUST", "南京理工大学", "南理工"],
+    "flag": null
+  },
+  {
+    "canonical": "Nankai University",
+    "aliases": ["NKU", "南开大学", "南开"],
+    "flag": null
+  },
+  {
+    "canonical": "National University of Defense Technology",
+    "aliases": ["NUDT", "国防科技大学", "国防科大"],
+    "flag": "double_star"
+  },
+  {
+    "canonical": "North China Electric Power University",
+    "aliases": ["NCEPU", "Huabei Electric Power University", "华北电力大学"],
+    "flag": null
+  },
+  {
+    "canonical": "Northeast Forestry University",
+    "aliases": ["NEFU", "东北林业大学", "东林"],
+    "flag": null
+  },
+  {
+    "canonical": "Northeast Normal University",
+    "aliases": ["NENU", "东北师范大学", "东北师大"],
+    "flag": null
+  },
+  {
+    "canonical": "Northeastern University",
+    "aliases": ["NEU", "东北大学"],
+    "flag": null
+  },
+  {
+    "canonical": "Northwest University",
+    "aliases": ["NWU", "西北大学"],
+    "flag": null
+  },
+  {
+    "canonical": "Northwestern Polytechnical University",
+    "aliases": ["NWPU", "西北工业大学", "西工大"],
+    "flag": null
+  },
+  {
+    "canonical": "Ocean University of China, Qingdao",
+    "aliases": ["OUC", "中国海洋大学", "海大"],
+    "flag": null
+  },
+  {
+    "canonical": "Peking University",
+    "aliases": ["PKU", "北京大学", "北大"],
+    "flag": null
+  },
+  {
+    "canonical": "Renmin University of China",
+    "aliases": ["RUC", "中国人民大学", "人大"],
+    "flag": null
+  },
+  {
+    "canonical": "Shandong University",
+    "aliases": ["SDU", "山东大学", "山大"],
+    "flag": null
+  },
+  {
+    "canonical": "Shanghai Medical University",
+    "aliases": ["SHMU", "上海医科大学"],
+    "flag": null
+  },
+  {
+    "canonical": "Shanghai International Studies University",
+    "aliases": ["SISU", "上海外国语大学", "上外"],
+    "flag": null
+  },
+  {
+    "canonical": "Shanghai Jiaotong University",
+    "aliases": ["SJTU", "上海交通大学", "上交"],
+    "flag": null
+  },
+  {
+    "canonical": "Shanghai University of Finance and Economics",
+    "aliases": ["SUFE", "上海财经大学", "上财"],
+    "flag": null
+  },
+  {
+    "canonical": "Sichuan University",
+    "aliases": ["SCU", "四川大学", "川大"],
+    "flag": null
+  },
+  {
+    "canonical": "South China University of Technology",
+    "aliases": ["SCUT", "华南理工大学", "华南理工"],
+    "flag": null
+  },
+  {
+    "canonical": "Southeast University",
+    "aliases": ["SEU", "东南大学", "东大"],
+    "flag": null
+  },
+  {
+    "canonical": "Southwest Jiaotong University",
+    "aliases": ["SWJTU", "西南交通大学", "西南交大"],
+    "flag": null
+  },
+  {
+    "canonical": "Southwest University",
+    "aliases": ["SWU", "西南大学"],
+    "flag": null
+  },
+  {
+    "canonical": "Southwestern University of Finance and Economics",
+    "aliases": ["SWUFE", "西南财经大学", "西南财大"],
+    "flag": null
+  },
+  {
+    "canonical": "Sun Yat-Sen University",
+    "aliases": ["SYSU", "Zhongshan University", "中山大学", "中大"],
+    "flag": null
+  },
+  {
+    "canonical": "Suzhou University",
+    "aliases": ["SUDA", "Soochow University", "苏州大学", "苏大"],
+    "flag": "double_star"
+  },
+  {
+    "canonical": "Tianjin University",
+    "aliases": ["TJU", "天津大学", "天大"],
+    "flag": null
+  },
+  {
+    "canonical": "Tongji University",
+    "aliases": ["同济大学", "同济"],
+    "flag": null
+  },
+  {
+    "canonical": "Tsinghua University",
+    "aliases": ["THU", "清华大学", "清华"],
+    "flag": null
+  },
+  {
+    "canonical": "University of Electronic Science and Technology of China",
+    "aliases": ["UESTC", "电子科技大学", "电子科大"],
+    "flag": null
+  },
+  {
+    "canonical": "University of International Business and Economics",
+    "aliases": ["UIBE", "对外经济贸易大学", "对外经贸"],
+    "flag": null
+  },
+  {
+    "canonical": "University of Science and Technology Beijing",
+    "aliases": ["USTB", "北京科技大学", "北科大"],
+    "flag": null
+  },
+  {
+    "canonical": "University of Science and Technology of China",
+    "aliases": ["USTC", "中国科学技术大学", "中科大"],
+    "flag": null
+  },
+  {
+    "canonical": "Wuhan University",
+    "aliases": ["WHU", "武汉大学", "武大"],
+    "flag": null
+  },
+  {
+    "canonical": "Wuhan University of Technology",
+    "aliases": ["WUT", "武汉理工大学", "武理工"],
+    "flag": null
+  },
+  {
+    "canonical": "Xi'an Jiaotong University",
+    "aliases": ["XJTU", "西安交通大学", "西安交大"],
+    "flag": null
+  },
+  {
+    "canonical": "Xiamen University",
+    "aliases": ["XMU", "厦门大学", "厦大"],
+    "flag": null
+  },
+  {
+    "canonical": "Xidian University",
+    "aliases": ["XDU", "Xi'an University of Electronic Science and Technology", "西安电子科技大学", "西电"],
+    "flag": "double_star"
+  },
+  {
+    "canonical": "Yanshan University",
+    "aliases": ["YSU", "燕山大学"],
+    "flag": "double_star"
+  },
+  {
+    "canonical": "Yunnan University",
+    "aliases": ["YNU", "云南大学", "云大"],
+    "flag": null
+  },
+  {
+    "canonical": "Zhejiang University",
+    "aliases": ["ZJU", "浙江大学", "浙大"],
+    "flag": null
+  },
+  {
+    "canonical": "Zhejiang University of Technology",
+    "aliases": ["ZJUT", "浙江工业大学", "浙工大"],
+    "flag": "double_star"
+  },
+  {
+    "canonical": "Zhengzhou University",
+    "aliases": ["ZZU", "郑州大学", "郑大"],
+    "flag": "double_star"
+  },
+  {
+    "canonical": "Zhongnan University of Economics and Law",
+    "aliases": ["ZUEL", "中南财经政法大学", "中南财经"],
+    "flag": null
+  },
+  {
+    "canonical": "Beijing Normal University-Hong Kong Baptist University United International College",
+    "aliases": ["UIC", "北师港浸大联合国际学院", "北师大-港浸大联合国际学院"],
+    "flag": "star_redirect"
+  },
+  {
+    "canonical": "The Chinese University of Hong Kong, Shenzhen",
+    "aliases": ["CUHKSZ", "香港中文大学（深圳）", "港中深"],
+    "flag": "star_redirect"
+  }
+]
