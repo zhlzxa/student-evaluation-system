@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     CHINA_RULES_TXT_PATH: str | None = None
     INDIA_RULES_TXT_PATH: str | None = None
 
+    # JWT Authentication
+    JWT_SECRET_KEY: str = "your-secret-key-change-this-in-production"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
     @property
     def database_url(self) -> str:
         return (

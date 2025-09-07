@@ -11,7 +11,6 @@ from app.db.session import get_db
 from app.models import (
     DegreeEquivalencySource,
     CountryDegreeEquivalency,
-    SpecialInstitutionRule,
     EnglishRule,
     AdmissionRuleSet,
 )
@@ -20,8 +19,6 @@ from app.schemas import (
     DegreeEquivalencySourceRead,
     CountryDegreeEquivalencyCreate,
     CountryDegreeEquivalencyRead,
-    SpecialInstitutionRuleCreate,
-    SpecialInstitutionRuleRead,
     EnglishRuleCreate,
     EnglishRuleRead,
     AdmissionRuleSetCreate,
@@ -33,7 +30,6 @@ from app.agents.rules_parser import generate_checklists, generate_checklists_deb
 from app.agents.degree_ingest import ingest_equivalency_from_text
 from app.services.degree_ingest_service import (
     upsert_country_equivalency,
-    upsert_special_institution,
     ensure_sources,
 )
 from app.services.degree_bs4 import parse_country_requirements
@@ -119,22 +115,10 @@ async def ingest_degree_equivalency(payload: dict | None = None, db: Session = D
             upsert_country_equivalency(db, code, name, uk_class, requirement, source_url)
     db.commit()
 
-    for s in specials:
-        code = s.get("country_code_iso3") or ""
-        inst = s.get("institution_name") or ""
-        cat = s.get("category")
-        thr = s.get("thresholds")
-        notes = s.get("notes")
-        src = s.get("source_url") or url
-        if not code or len(code) < 3 or not inst:
-            continue
-        upsert_special_institution(db, code, inst, cat, thr, notes, src)
-    db.commit()
-
     ensure_sources(db, url)
     db.commit()
 
-    return {"countries": len(countries), "specials": len(specials)}
+    return {"countries": len(countries)}
 
 
 @router.post("/degree/ingest_bs4_country")
@@ -331,45 +315,6 @@ def list_country_equivalencies(
     stmt = select(CountryDegreeEquivalency)
     if uk_class:
         stmt = stmt.where(CountryDegreeEquivalency.uk_class == uk_class)
-    objs = db.execute(stmt).scalars().all()
-    return list(objs)
-
-
-# Special institutions
-@router.post("/degree/special", response_model=SpecialInstitutionRuleRead)
-def upsert_special_institution(data: SpecialInstitutionRuleCreate, db: Session = Depends(get_db)):
-    stmt = select(SpecialInstitutionRule).where(
-        SpecialInstitutionRule.country_code == data.country_code,
-        SpecialInstitutionRule.institution_name == data.institution_name,
-    )
-    existing = db.execute(stmt).scalar_one_or_none()
-    if existing:
-        for k, v in data.model_dump().items():
-            setattr(existing, k, v)
-        db.add(existing)
-        db.commit()
-        db.refresh(existing)
-        return existing
-    obj = SpecialInstitutionRule(**data.model_dump())
-    db.add(obj)
-    db.commit()
-    db.refresh(obj)
-    return obj
-
-
-@router.get("/degree/special", response_model=list[SpecialInstitutionRuleRead])
-def list_special_institutions(country_code: str | None = None, db: Session = Depends(get_db)):
-    stmt = select(SpecialInstitutionRule)
-    if country_code:
-        code = country_code.strip().upper()
-        if len(code) == 2:
-            try:
-                import pycountry  # type: ignore
-
-                code = pycountry.countries.lookup(code).alpha_3
-            except Exception:
-                pass
-        stmt = stmt.where(SpecialInstitutionRule.country_code == code)
     objs = db.execute(stmt).scalars().all()
     return list(objs)
 

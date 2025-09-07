@@ -65,3 +65,8 @@ Desktop.ini
 # Logs
 logs/
 *.log
+
+# Frontend Template
+ai-chatbot-main/
+
+.claude/

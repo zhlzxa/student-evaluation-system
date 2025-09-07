@@ -27,6 +27,8 @@ tenacity = "^9.0.0"
 pycountry = "^24.6.1"
 pandas = "^2.2.0"
 lxml = "^5.2.2"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.6.8"

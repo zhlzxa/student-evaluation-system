@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from app.models.rules import AdmissionRuleSet, CountryDegreeEquivalency, SpecialInstitutionRule
+from app.models.rules import AdmissionRuleSet, CountryDegreeEquivalency
 from app.agents.china_eligibility import evaluate_china_applicant
 from app.agents.india_eligibility import evaluate_india_applicant
 
@@ -127,23 +127,11 @@ class NewEligibilityService:
                 "note": "No specific rules found for this country"
             }
         
-        # Check for special institution rules
-        special_rule = self.db.query(SpecialInstitutionRule).filter_by(
-            country_code=country_code,
-            institution_name=institution_name
-        ).first()
-        
         # Simple threshold-based evaluation (this would need more sophisticated logic)
         requirement = equivalency.requirement or {}
         threshold = None
         
-        if special_rule and special_rule.thresholds:
-            # Use special institution threshold
-            thresholds = special_rule.thresholds
-            if target_uk_class == "2:1" and "2:1" in thresholds:
-                threshold_str = thresholds["2:1"].replace("%", "")
-                threshold = float(threshold_str)
-        elif "min_percentage" in requirement:
+        if "min_percentage" in requirement:
             threshold = requirement["min_percentage"]
         
         if threshold is None:

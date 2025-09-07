@@ -5,7 +5,7 @@ from typing import Annotated, Dict, Any
 from semantic_kernel.functions import kernel_function
 
 from app.db.session import SessionLocal
-from app.models import CountryDegreeEquivalency, SpecialInstitutionRule
+from app.models import CountryDegreeEquivalency
 
 
 class DegreePolicyPlugin:
@@ -67,33 +67,6 @@ class DegreePolicyPlugin:
                 "source_url": req.get("source_url"),
                 "all_classes": by_class,
             })
-        finally:
-            db.close()
-
-    @kernel_function(description="List special institution rules for a country (e.g., CHN, IND).")
-    def list_special_institutions(
-        self,
-        country_code_iso3: Annotated[str, "ISO3 code, e.g., CHN"],
-    ) -> Annotated[str, "JSON string: array of items {institution_name, category, thresholds, notes}"]:
-        db = SessionLocal()
-        try:
-            code = country_code_iso3.strip().upper()
-            rows = (
-                db.query(SpecialInstitutionRule)
-                .filter(SpecialInstitutionRule.country_code == code)
-                .all()
-            )
-            items = []
-            for r in rows:
-                items.append({
-                    "institution_name": r.institution_name,
-                    "category": r.category,
-                    "thresholds": r.thresholds,
-                    "notes": r.notes,
-                })
-            import json
-
-            return json.dumps(items)
         finally:
             db.close()
 

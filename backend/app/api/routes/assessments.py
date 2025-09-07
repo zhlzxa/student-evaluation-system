@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from pathlib import Path
 
 from app.db.session import get_db
+from app.api.dependencies import get_current_active_user
+from app.models.user import User
 from app.models.assessment import AssessmentRun, Applicant, ApplicantDocument
 from app.models import AdmissionRuleSet
 from app.schemas.assessments import (
@@ -26,7 +29,11 @@ def health() -> dict[str, str]:
 
 
 @router.post("/runs", response_model=AssessmentRunRead)
-def create_run(data: AssessmentRunCreate, db: Session = Depends(get_db)):
+def create_run(
+    data: AssessmentRunCreate, 
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_active_user)]
+):
     if not data.rule_set_id and not data.source_url:
         raise HTTPException(status_code=400, detail="Either rule_set_id or source_url must be provided")
     if data.rule_set_id:

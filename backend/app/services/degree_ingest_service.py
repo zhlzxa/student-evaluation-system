@@ -4,7 +4,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.models import CountryDegreeEquivalency, SpecialInstitutionRule, DegreeEquivalencySource
+from app.models import CountryDegreeEquivalency, DegreeEquivalencySource
 
 
 def upsert_country_equivalency(db: Session, country_code_iso3: str, country_name: str, uk_class: str, requirement: dict[str, Any], source_url: str | None) -> None:
@@ -24,27 +24,6 @@ def upsert_country_equivalency(db: Session, country_code_iso3: str, country_name
                 uk_class=ukc,
                 requirement=requirement,
                 source_url=source_url,
-            )
-        )
-
-
-def upsert_special_institution(db: Session, country_code_iso3: str, institution_name: str, category: str | None, thresholds: dict[str, Any] | None, notes: str | None, source_url: str | None) -> None:
-    cc = (country_code_iso3 or "").upper().strip()[:3]
-    inst = institution_name.strip()
-    obj = db.query(SpecialInstitutionRule).filter_by(country_code=cc, institution_name=inst).one_or_none()
-    if obj:
-        obj.category = (category or "").strip()
-        obj.thresholds = thresholds
-        obj.notes = notes
-        db.add(obj)
-    else:
-        db.add(
-            SpecialInstitutionRule(
-                country_code=cc,
-                institution_name=inst,
-                category=(category or "").strip(),
-                thresholds=thresholds,
-                notes=notes,
             )
         )
 

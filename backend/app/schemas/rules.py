@@ -44,25 +44,6 @@ class CountryDegreeEquivalencyRead(CountryDegreeEquivalencyBase):
         from_attributes = True
 
 
-class SpecialInstitutionRuleBase(BaseModel):
-    country_code: str
-    institution_name: str
-    category: str
-    thresholds: dict[str, Any] | None = None
-    notes: str | None = None
-
-
-class SpecialInstitutionRuleCreate(SpecialInstitutionRuleBase):
-    pass
-
-
-class SpecialInstitutionRuleRead(SpecialInstitutionRuleBase):
-    id: int
-
-    class Config:
-        from_attributes = True
-
-
 class EnglishRuleBase(BaseModel):
     nationality_exempt_countries: list[str] | None = None
     degree_obtained_exempt_countries: list[str] | None = None

@@ -64,21 +64,6 @@ class CountryDegreeEquivalency(Base):
     )
 
 
-class SpecialInstitutionRule(Base):
-    __tablename__ = "special_institution_rules"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    country_code: Mapped[str] = mapped_column(String(3), index=True)
-    institution_name: Mapped[str] = mapped_column(String(512), index=True)
-    category: Mapped[str] = mapped_column(String(256), index=True)
-    thresholds: Mapped[dict[str, Any] | None] = mapped_column(JSON)
-    notes: Mapped[str | None] = mapped_column(Text())
-
-    __table_args__ = (
-        UniqueConstraint("country_code", "institution_name", name="uq_country_institution"),
-    )
-
-
 class EnglishRule(Base):
     __tablename__ = "english_rules"
 
