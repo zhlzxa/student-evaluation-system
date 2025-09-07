@@ -8,6 +8,7 @@ from app.api.routes import rules as rules_router
 from app.api.routes import assessments as assessments_router
 from app.api.routes import reports as reports_router
 from app.api.routes import auth as auth_router
+from app.api.routes import models as models_router
 
 
 settings = get_settings()
@@ -34,6 +35,7 @@ def create_app() -> FastAPI:
 
     api = FastAPI(title=f"{settings.APP_NAME}-api")
     api.include_router(auth_router.router, prefix="/auth", tags=["authentication"])
+    api.include_router(models_router.router, prefix="/models", tags=["models"])
     api.include_router(rules_router.router)
     api.include_router(assessments_router.router)
     api.include_router(reports_router.router)

@@ -15,6 +15,7 @@ from .evaluation import (
     ApplicantRanking,
     PairwiseComparison,
 )
+from .run_log import RunLog
 from .user import User
 
 __all__ = [
@@ -29,5 +30,6 @@ __all__ = [
     "ApplicantGating",
     "ApplicantRanking",
     "PairwiseComparison",
+    "RunLog",
     "User",
 ]

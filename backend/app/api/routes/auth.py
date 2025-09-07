@@ -117,35 +117,3 @@ def read_users_me(
     return current_user
 
 
-@router.post("/guest", response_model=Token)
-def create_guest_user(
-    db: Annotated[Session, Depends(get_db)]
-):
-    """Create a guest user for demo purposes."""
-    from datetime import datetime
-    import uuid
-    
-    # Create a temporary guest user
-    guest_email = f"guest-{uuid.uuid4().hex[:8]}@example.com"
-    guest_password = "guest-password"
-    
-    user_create = UserCreate(
-        email=guest_email,
-        password=guest_password,
-        full_name="Guest User",
-        is_active=True
-    )
-    
-    user = UserService.create_user(db, user_create)
-    
-    # Create access token
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
-    )
-    
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": UserSchema.model_validate(user)
-    }

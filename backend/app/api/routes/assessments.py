@@ -16,8 +16,10 @@ from app.schemas.assessments import (
     AssessmentRunRead,
     AssessmentRunDetail,
 )
+from app.agents.model_config import get_supported_models, get_agent_types
 from app.services.storage import save_zip, extract_zip, iter_applicant_folders, guess_content_type, read_text_preview
 import logging
+from app.models.run_log import RunLog
 
 
 router = APIRouter(prefix="/assessments", tags=["assessments"])
@@ -34,16 +36,30 @@ def create_run(
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)]
 ):
-    if not data.rule_set_id and not data.source_url:
-        raise HTTPException(status_code=400, detail="Either rule_set_id or source_url must be provided")
+    if not data.rule_set_id and not data.rule_set_url:
+        raise HTTPException(status_code=400, detail="Either rule_set_id or rule_set_url must be provided")
     if data.rule_set_id:
         rs = db.get(AdmissionRuleSet, data.rule_set_id)
         if not rs:
             raise HTTPException(status_code=404, detail="Rule set not found")
+    # Validate optional agent_models mapping
+    agent_models: dict[str, str] | None = None
+    if data.agent_models:
+        supported = set(get_supported_models())
+        valid_agents = set(get_agent_types())
+        invalid_agents = [k for k in data.agent_models.keys() if k not in valid_agents]
+        invalid_models = [m for m in data.agent_models.values() if m not in supported]
+        if invalid_agents:
+            raise HTTPException(status_code=400, detail=f"Invalid agent types: {invalid_agents}")
+        if invalid_models:
+            raise HTTPException(status_code=400, detail=f"Unsupported models: {invalid_models}")
+        agent_models = dict(data.agent_models)
+
     run = AssessmentRun(
         rule_set_id=data.rule_set_id,
-        source_url=data.source_url,
+        rule_set_url=data.rule_set_url,
         custom_requirements=data.custom_requirements or [],
+        agent_models=agent_models,
         status="created",
     )
     db.add(run)
@@ -109,6 +125,13 @@ async def upload_zip(run_id: int, file: UploadFile = File(...), db: Session = De
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
 
+    # Clear any previously uploaded applicants/documents for this run
+    # so that a new upload replaces the dataset instead of appending.
+    existing = db.query(Applicant).filter(Applicant.run_id == run.id).all()
+    for a in existing:
+        db.delete(a)
+    db.flush()
+
     content = await file.read()
     zip_path = save_zip(content, run_id)
     extract_root = extract_zip(zip_path, run_id)
@@ -160,3 +183,66 @@ def start_run(run_id: int, db: Session = Depends(get_db)):
         db.commit()
     db.refresh(run)
     return run
+
+
+@router.put("/runs/{run_id}/models", response_model=AssessmentRunRead)
+def set_run_agent_models(
+    run_id: int,
+    payload: dict[str, str],
+    db: Session = Depends(get_db),
+):
+    """Set or update per-run agent model mapping.
+
+    Body: { "english": "gpt-4o", "degree": "o3-mini", ... }
+    """
+    run = db.get(AssessmentRun, run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Body must be a JSON object of agent->model")
+    supported = set(get_supported_models())
+    valid_agents = set(get_agent_types())
+    invalid_agents = [k for k in payload.keys() if k not in valid_agents]
+    invalid_models = [m for m in payload.values() if m not in supported]
+    if invalid_agents:
+        raise HTTPException(status_code=400, detail=f"Invalid agent types: {invalid_agents}")
+    if invalid_models:
+        raise HTTPException(status_code=400, detail=f"Unsupported models: {invalid_models}")
+
+    run.agent_models = dict(payload)
+    db.add(run)
+    db.commit()
+    db.refresh(run)
+    return run
+@router.get("/runs/{run_id}/logs")
+def get_run_logs(
+    run_id: int,
+    limit: int = 200,
+    applicant_id: int | None = None,
+    agent: str | None = None,
+    db: Session = Depends(get_db),
+):
+    """Return recent agent call logs for a run. No streaming; polling-friendly."""
+    q = db.query(RunLog).filter(RunLog.run_id == run_id)
+    if applicant_id:
+        q = q.filter(RunLog.applicant_id == applicant_id)
+    if agent:
+        q = q.filter(RunLog.agent_name == agent)
+    q = q.order_by(RunLog.created_at.desc())
+    items = q.limit(max(10, min(1000, limit))).all()
+    return [
+        {
+            "id": it.id,
+            "run_id": it.run_id,
+            "applicant_id": it.applicant_id,
+            "agent": it.agent_name,
+            "phase": it.phase,
+            "message": it.message,
+            "created_at": it.created_at.isoformat(),
+        }
+        for it in items
+    ]
+
+
+    ]

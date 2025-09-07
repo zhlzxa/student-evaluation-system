@@ -14,8 +14,10 @@ class AssessmentRun(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     rule_set_id: Mapped[int | None] = mapped_column(ForeignKey("admission_rule_sets.id", ondelete="SET NULL"))
-    source_url: Mapped[str | None] = mapped_column(String(1000))
+    rule_set_url: Mapped[str | None] = mapped_column(String(1000))
     custom_requirements: Mapped[list[str] | None] = mapped_column(JSON)
+    # Optional per-run override of agent models, e.g., {"english": "gpt-4o", "degree": "o3-mini"}
+    agent_models: Mapped[dict[str, str] | None] = mapped_column("agent_models_json", JSON)
     status: Mapped[str] = mapped_column(String(32), default="created", index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -50,4 +52,3 @@ class ApplicantDocument(Base):
     doc_type: Mapped[str | None] = mapped_column(String(64))
 
     applicant: Mapped[Applicant] = relationship(back_populates="documents")
-

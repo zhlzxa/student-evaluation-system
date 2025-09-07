@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     # Prefer user's env var naming if present
     AZURE_BING_CONNECTION_NAME: str | None = None
     AZURE_BING_GROUNDING_CONNECTION_NAME: str | None = None
+    
+    # Supported models configuration
+    SUPPORTED_MODELS: str = "gpt-4o,o3-mini"
+    DEFAULT_MODEL: str = "gpt-4o"
 
     # Storage
     STORAGE_DIR: str = "./storage"
@@ -68,6 +72,10 @@ class Settings(BaseSettings):
     @property
     def bing_connection_name(self) -> str | None:
         return self.AZURE_BING_CONNECTION_NAME or self.AZURE_BING_GROUNDING_CONNECTION_NAME
+    
+    @property
+    def supported_models(self) -> list[str]:
+        return [model.strip() for model in self.SUPPORTED_MODELS.split(",") if model.strip()]
 
 
 @lru_cache(maxsize=1)

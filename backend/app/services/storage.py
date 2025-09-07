@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import shutil
 from typing import Iterator
 import zipfile
 
@@ -34,6 +35,9 @@ def _is_within_directory(directory: Path, target: Path) -> bool:
 def extract_zip(zip_path: Path, run_id: int) -> Path:
     base = ensure_storage_dir()
     dest = base / "runs" / f"run_{run_id}"
+    # Clean previous extraction to avoid stale applicants/documents on re-upload
+    if dest.exists():
+        shutil.rmtree(dest, ignore_errors=True)
     dest.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(zip_path) as zf:
         for member in zf.infolist():
@@ -54,6 +58,10 @@ def extract_zip(zip_path: Path, run_id: int) -> Path:
 def iter_applicant_folders(root: Path) -> Iterator[Path]:
     for p in root.iterdir():
         if p.is_dir():
+            name = p.name
+            # Skip common junk/hidden directories from ZIPs
+            if name.startswith('.') or name == '__MACOSX':
+                continue
             yield p
 
 
@@ -81,4 +89,3 @@ def read_text_preview(path: Path, max_chars: int = 4000) -> str | None:
     except Exception:
         return None
     return None
-

@@ -13,10 +13,22 @@ async def run_concurrent_evaluation(
     degree_checklists: list[str] | None = None,
     experience_checklists: list[str] | None = None,
     ps_rl_checklists: list[str] | None = None,
+    academic_checklists: list[str] | None = None,
     special_context: str | None = None,
     detected_country_iso3: str | None = None,
+    agent_models: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Run all 5 evaluation agents concurrently using simple asyncio.gather()."""
+    
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Log the checklists received for debugging
+    logger.info(f"Concurrent evaluator received checklists for applicant {applicant_id}:")
+    logger.info(f"  - degree_checklists: {degree_checklists}")
+    logger.info(f"  - experience_checklists: {experience_checklists}") 
+    logger.info(f"  - ps_rl_checklists: {ps_rl_checklists}")
+    logger.info(f"  - academic_checklists: {academic_checklists}")
     
     # Import the actual agent functions directly
     from app.agents.evaluators import (
@@ -27,6 +39,11 @@ async def run_concurrent_evaluation(
         academic_agent,
     )
     
+    # Resolve optional per-agent model overrides
+    agent_models = agent_models or {}
+    def m(name: str) -> str | None:
+        return agent_models.get(name)
+
     # Create concurrent tasks for all 5 agents
     tasks = {}
     
@@ -36,6 +53,7 @@ async def run_concurrent_evaluation(
         run_id=run_id,
         level_hint=english_level_hint,
         policy=english_policy,
+        model_override=m("english"),
     )
     
     # Degree Agent
@@ -46,6 +64,7 @@ async def run_concurrent_evaluation(
         checklists=degree_checklists,
         special_context=special_context,
         detected_country_iso3=detected_country_iso3,
+        model_override=m("degree"),
     )
     
     # Experience Agent
@@ -53,6 +72,7 @@ async def run_concurrent_evaluation(
         applicant_id=applicant_id,
         run_id=run_id,
         checklist=experience_checklists,
+        model_override=m("experience"),
     )
     
     # PS/RL Agent
@@ -60,12 +80,15 @@ async def run_concurrent_evaluation(
         applicant_id=applicant_id,
         run_id=run_id,
         checklist=ps_rl_checklists,
+        model_override=m("ps_rl"),
     )
     
     # Academic Agent
     tasks["academic"] = academic_agent(
         applicant_id=applicant_id,
         run_id=run_id,
+        checklist=academic_checklists,
+        model_override=m("academic"),
     )
     
     # Run all agents concurrently with timeout

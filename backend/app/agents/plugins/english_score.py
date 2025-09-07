@@ -29,6 +29,14 @@ class EnglishScorePlugin:
             return 0
         return 0
 
+    @kernel_function(description="Return perfect score (10) for nationality or degree exemptions.")
+    def score_exemption(
+        self,
+        exemption_reason: Annotated[str, "Reason for exemption (e.g., 'British nationality', 'UK degree')"],
+    ) -> Annotated[int, "Always returns 10 for exempted candidates"]:
+        # Exempted candidates always get full marks
+        return 10
+
     @kernel_function(description="Compare numeric thresholds for overall and components.")
     def meets_thresholds(
         self,

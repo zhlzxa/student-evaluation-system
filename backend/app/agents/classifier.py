@@ -4,6 +4,7 @@ from typing import Optional
 
 from app.config import get_settings
 from app.agents.azure_client import run_single_turn_blocking
+from app.agents.model_config import get_model_for_agent
 
 
 ALLOWED_LABELS = [
@@ -34,7 +35,7 @@ def _build_instructions() -> str:
     )
 
 
-def classify_document(text: str) -> Optional[str]:
+def classify_document(text: str, model_override: Optional[str] = None) -> Optional[str]:
     """Classify a document text into a canonical label. Returns None if unavailable.
 
     Uses AzureAIAgent; if configuration is missing or errors occur, returns None.
@@ -52,7 +53,8 @@ def classify_document(text: str) -> Optional[str]:
     )
 
     try:
-        result = run_single_turn_blocking(name="DocClassifier", instructions=instructions, message=prompt)
+        model = model_override or get_model_for_agent("classifier")
+        result = run_single_turn_blocking(name="DocClassifier", instructions=instructions, message=prompt, model=model)
         label = (result or "").strip().strip("`\"'")
         if label in ALLOWED_LABELS:
             return label
@@ -65,7 +67,7 @@ def classify_document(text: str) -> Optional[str]:
         return None
 
 
-def classify_documents_batch(documents: list[dict]) -> dict[str, str]:
+def classify_documents_batch(documents: list[dict], model_override: Optional[str] = None) -> dict[str, str]:
     """Classify multiple documents in a single agent call for efficiency.
     
     Args:
@@ -108,7 +110,8 @@ def classify_documents_batch(documents: list[dict]) -> dict[str, str]:
     prompt = "\n".join(prompt_parts)
     
     try:
-        result = run_single_turn_blocking(name="BatchDocClassifier", instructions=instructions, message=prompt)
+        model = model_override or get_model_for_agent("batch_classifier")
+        result = run_single_turn_blocking(name="BatchDocClassifier", instructions=instructions, message=prompt, model=model)
         
         # Parse JSON response
         import json
@@ -139,4 +142,3 @@ def classify_documents_batch(documents: list[dict]) -> dict[str, str]:
         
     except Exception:
         return {}
-

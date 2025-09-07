@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from app.celery_app import celery
 
@@ -51,6 +52,9 @@ def orchestrate_run(run_id: int) -> str:
             .filter(Applicant.run_id == run_id)
         ).scalars().all()
         
+        # Resolve per-run model overrides (if any)
+        run_agent_models: dict[str, str] = run.agent_models or {}
+
         # First pass: Extract text from documents that need it
         for doc in docs:
             try:
@@ -99,7 +103,7 @@ def orchestrate_run(run_id: int) -> str:
                 logger.info(f"Batch classifying {len(batch_docs)} documents for applicant {applicant_id}")
                 
                 # Call batch classification
-                classifications = classify_documents_batch(batch_docs)
+                classifications = classify_documents_batch(batch_docs, model_override=run_agent_models.get("batch_classifier"))
                 
                 # Apply results
                 for doc in unclassified_docs:
@@ -117,7 +121,7 @@ def orchestrate_run(run_id: int) -> str:
                 for doc in unclassified_docs:
                     try:
                         if doc.text_preview and not doc.doc_type:
-                            label = classify_document(doc.text_preview)
+                            label = classify_document(doc.text_preview, model_override=run_agent_models.get("classifier"))
                             if label:
                                 doc.doc_type = label
                                 db.add(doc)
@@ -143,7 +147,9 @@ def orchestrate_run(run_id: int) -> str:
         english_policy = None
         target_degree_class = "UPPER_SECOND"
         english_level_hint = None
+        
         try:
+            # First priority: Use existing rule_set_id if available
             if run.rule_set_id:
                 from app.models import AdmissionRuleSet
 
@@ -163,7 +169,88 @@ def orchestrate_run(run_id: int) -> str:
                             "degree_obtained_exempt_countries": er.degree_obtained_exempt_countries,
                             "levels": er.levels,
                         }
-        except Exception:
+            
+            # Second priority: Extract rules from source_url if no rule_set_id
+            elif run.rule_set_url:
+                logger.info(f"No rule_set_id found, extracting rules from rule_set_url: {run.rule_set_url}")
+                
+                # Import URL rules extractor
+                from app.agents.url_rules_extractor import extract_rules_from_url
+                from app.services.logging_service import log_agent_event
+                
+                try:
+                    log_agent_event(run_id, "url_rules_extractor", "start", f"Starting URL extraction from {run.rule_set_url}")
+                    
+                    # Extract rules from URL with custom requirements
+                    url_rules = asyncio.run(extract_rules_from_url(
+                        url=run.rule_set_url,
+                        custom_requirements=run.custom_requirements,
+                        model_override=run_agent_models.get("url_rules_extractor")
+                    ))
+                    
+                    logger.info(f"URL extraction completed. Results: {url_rules}")
+                    log_agent_event(run_id, "url_rules_extractor", "completed", 
+                                  f"URL extraction completed. Extracted {len(url_rules.get('checklists', {}))} agent checklists")
+                    
+                    if url_rules and url_rules.get('checklists'):
+                        checklists = url_rules['checklists']
+                        
+                        # Log the extracted checklists for debugging
+                        for agent, agent_checklist in checklists.items():
+                            logger.info(f"Extracted checklist for {agent}: {len(agent_checklist)} items")
+                            log_agent_event(run_id, "url_rules_extractor", "checklist", 
+                                          f"Extracted {len(agent_checklist)} items for {agent}: {agent_checklist}")
+                        
+                        # Extract target degree class
+                        if url_rules.get('degree_requirement_class'):
+                            target_degree_class = url_rules['degree_requirement_class'].upper()
+                            logger.info(f"Extracted degree requirement class: {target_degree_class}")
+                        
+                        # Extract english level hint
+                        english_level_hint = url_rules.get('english_level')
+                        if english_level_hint:
+                            logger.info(f"Extracted english level hint: {english_level_hint}")
+                        
+                        # Create a temporary rule set for this run to avoid re-extraction
+                        from app.models import AdmissionRuleSet
+                        programme_title = url_rules.get('programme_title', f"Auto-extracted from {run.rule_set_url}")
+                        
+                        temp_rule_set = AdmissionRuleSet(
+                            name=programme_title,
+                            description=f"Auto-generated from {run.rule_set_url}",
+                            metadata_json={
+                                'checklists': checklists,
+                                'english_level': english_level_hint,
+                                'degree_requirement_class': target_degree_class,
+                                'rule_set_url': run.rule_set_url,
+                                'text_length': url_rules.get('text_length', 0),
+                                'auto_generated': True
+                            }
+                        )
+                        
+                        # Save the temporary rule set and link it to the run
+                        db.add(temp_rule_set)
+                        db.flush()  # Get the ID without committing
+                        
+                        run.rule_set_id = temp_rule_set.id
+                        db.add(run)
+                        db.commit()
+                        
+                        logger.info(f"Created temporary rule set {temp_rule_set.id} for run {run.id}")
+                        log_agent_event(run_id, "url_rules_extractor", "success", 
+                                      f"Created temporary rule set {temp_rule_set.id} with {len(checklists)} agent checklists")
+                    else:
+                        logger.warning(f"Failed to extract rules from {run.rule_set_url}, url_rules: {url_rules}")
+                        log_agent_event(run_id, "url_rules_extractor", "warning", 
+                                      f"Failed to extract useful rules from {run.rule_set_url}")
+                        
+                except Exception as url_error:
+                    logger.error(f"Error during URL rules extraction: {str(url_error)}")
+                    log_agent_event(run_id, "url_rules_extractor", "error", f"URL extraction failed: {str(url_error)}")
+                    # Continue with empty checklists as fallback
+                    
+        except Exception as e:
+            logger.error(f"Error processing rules for run {run.id}: {str(e)}")
             checklists = {}
             english_policy = None
 
@@ -208,8 +295,7 @@ def orchestrate_run(run_id: int) -> str:
                     special_context = None
             
             # FIXED: Agents are async, but this is now a sync function
-            # Need to use asyncio to run async agents
-            import asyncio
+            # Use already imported asyncio at module scope
             
             async def run_agents():
                 # Check existing evaluations to avoid re-running agents
@@ -229,6 +315,21 @@ def orchestrate_run(run_id: int) -> str:
                     from app.agents.concurrent_evaluators import run_concurrent_evaluation
                     
                     try:
+                        # Log the checklists being passed to agents for debugging
+                        logger.info(f"Passing checklists to concurrent evaluators for applicant {a.id}:")
+                        logger.info(f"  - degree_agent: {len(checklists.get('degree_agent', []))} items: {checklists.get('degree_agent', [])}")
+                        logger.info(f"  - experience_agent: {len(checklists.get('experience_agent', []))} items: {checklists.get('experience_agent', [])}")
+                        logger.info(f"  - ps_rl_agent: {len(checklists.get('ps_rl_agent', []))} items: {checklists.get('ps_rl_agent', [])}")
+                        logger.info(f"  - academic_agent: {len(checklists.get('academic_agent', []))} items: {checklists.get('academic_agent', [])}")
+                        
+                        from app.services.logging_service import log_agent_event
+                        log_agent_event(run_id, "concurrent_evaluators", "checklist_summary", 
+                                      f"Starting evaluation for applicant {a.id} with checklists: "
+                                      f"degree={len(checklists.get('degree_agent', []))}, "
+                                      f"experience={len(checklists.get('experience_agent', []))}, "
+                                      f"ps_rl={len(checklists.get('ps_rl_agent', []))}, "
+                                      f"academic={len(checklists.get('academic_agent', []))}", applicant_id=a.id)
+                        
                         results = await run_concurrent_evaluation(
                             applicant_id=a.id,
                             run_id=run_id,
@@ -238,8 +339,10 @@ def orchestrate_run(run_id: int) -> str:
                             degree_checklists=checklists.get("degree_agent"),
                             experience_checklists=checklists.get("experience_agent"),
                             ps_rl_checklists=checklists.get("ps_rl_agent"),
+                            academic_checklists=checklists.get("academic_agent"),
                             special_context=special_context,
                             detected_country_iso3=iso3 or None,
+                            agent_models=run_agent_models,
                         )
                         
                         # Process and save results
@@ -356,7 +459,9 @@ def orchestrate_run(run_id: int) -> str:
                 evs2 = db.query(ApplicantEvaluation).filter_by(applicant_id=aid2).all()
                 d1 = {e.agent_name: {"score": e.score, "details": e.details} for e in evs1}
                 d2 = {e.agent_name: {"score": e.score, "details": e.details} for e in evs2}
-                verdict = compare_agent(d1, d2)
+                # Allow per-run override for compare agent
+                import asyncio as _asyncio
+                verdict = _asyncio.run(compare_agent(d1, d2, model_override=run_agent_models.get("compare")))
                 winner = verdict.get("winner")
                 reason = verdict.get("reason") or ""
                 # persist comparison

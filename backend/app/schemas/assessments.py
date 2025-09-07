@@ -8,15 +8,17 @@ from pydantic import BaseModel, Field
 
 class AssessmentRunCreate(BaseModel):
     rule_set_id: int | None = None
-    source_url: str | None = None
+    rule_set_url: str | None = None
     custom_requirements: list[str] | None = None
+    agent_models: dict[str, str] | None = None
 
 
 class AssessmentRunRead(BaseModel):
     id: int
     rule_set_id: int | None
-    source_url: str | None
+    rule_set_url: str | None
     custom_requirements: list[str] | None
+    agent_models: dict[str, str] | None
     status: str
     created_at: datetime
     updated_at: datetime
@@ -51,4 +53,3 @@ class ApplicantRead(BaseModel):
 
 class AssessmentRunDetail(AssessmentRunRead):
     applicants: list[ApplicantRead] = []
-

@@ -18,6 +18,7 @@ async def run_single_turn(
     with_bing_grounding: bool = False,
     plugins: Optional[list[object]] = None,
     on_intermediate: Optional[Callable[[ChatMessageContent], Awaitable[None]]] = None,
+    model: Optional[str] = None,
 ) -> str:
     """Create a temporary agent, send one message, return final text.
 
@@ -43,7 +44,8 @@ async def run_single_turn(
     settings = get_settings()
     # Resolve endpoint and deployment name from our settings first, then fall back to SK settings
     endpoint: Optional[str] = settings.AZURE_AI_AGENT_ENDPOINT
-    deployment: Optional[str] = settings.AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME
+    # Use provided model or fall back to configured deployment name
+    deployment: Optional[str] = model or settings.AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME
     sk_settings: Optional[AzureAIAgentSettings] = None
     if not endpoint or not deployment:
         try:
@@ -137,6 +139,7 @@ def run_single_turn_blocking(
     tools: Optional[object] = None,
     with_bing_grounding: bool = False,
     plugins: Optional[list[object]] = None,
+    model: Optional[str] = None,
 ) -> str:
     return asyncio.run(
         run_single_turn(
@@ -146,5 +149,6 @@ def run_single_turn_blocking(
             tools=tools,
             with_bing_grounding=with_bing_grounding,
             plugins=plugins,
+            model=model,
         )
     )
