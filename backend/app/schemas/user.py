@@ -56,3 +56,5 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
     full_name: Optional[str] = None
+    # Optional invite code sent by client; validated by backend config
+    invite_code: Optional[str] = None

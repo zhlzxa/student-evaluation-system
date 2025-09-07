@@ -5,6 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.config import get_settings
 from app.schemas.user import (
     Token, UserCreate, User as UserSchema, 
     LoginRequest, RegisterRequest
@@ -23,12 +24,32 @@ def register_user(
     db: Annotated[Session, Depends(get_db)]
 ):
     """Register a new user."""
+    # Enforce invite code validation
+    settings = get_settings()
+    expected_code = (settings.INVITE_CODE or "UCLIXN").strip()
+    provided_code = (user_data.invite_code or "").strip()
+    
+    # Validate invite code
+    if not provided_code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invite code is required for registration",
+        )
+    
+    if provided_code.upper() != expected_code.upper():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid invite code. Please contact administrator for the correct invite code.",
+        )
+    
+    # Create user
     user_create = UserCreate(
         email=user_data.email,
         password=user_data.password,
         full_name=user_data.full_name
     )
     
+    # UserService.create_user already handles duplicate email errors
     user = UserService.create_user(db, user_create)
     
     # Create access token
@@ -115,5 +136,4 @@ def read_users_me(
 ):
     """Get current user."""
     return current_user
-
 

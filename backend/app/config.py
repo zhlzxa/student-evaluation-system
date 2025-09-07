@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     API_PREFIX: str = "/api"
     CORS_ORIGINS: str | None = None
 
+    # Registration invite code (optional). If set, backend enforces it.
+    INVITE_CODE: str | None = None
+
     # DB
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432

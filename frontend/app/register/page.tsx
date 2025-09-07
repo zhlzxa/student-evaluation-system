@@ -15,19 +15,31 @@ export default function RegisterPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const expected = process.env.NEXT_PUBLIC_INVITE_CODE || 'UCLIXN';
-    if (invite !== expected) {
-      setError('Invalid invite code');
-      return;
+    
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/auth/register`, {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, full_name: fullName, invite_code: invite }),
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        const errorMessage = errorData?.detail || 'Registration failed. Please try again.';
+        setError(errorMessage);
+        return;
+      }
+      
+      // auto login after successful registration
+      const si = await signIn('credentials', { redirect: false, email, password });
+      if (si?.ok) {
+        router.push('/');
+      } else {
+        setError('Registration successful, but auto login failed. Please login manually.');
+      }
+    } catch (error) {
+      setError('Network error. Please check your connection and try again.');
     }
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/auth/register`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, full_name: fullName }),
-    });
-    if (!res.ok) { setError('Register failed'); return; }
-    // auto login
-    const si = await signIn('credentials', { redirect: false, email, password });
-    if (si?.ok) router.push('/'); else setError('Auto login failed');
   };
 
   return (
@@ -40,7 +52,13 @@ export default function RegisterPage() {
             <TextField label="Full name" value={fullName} onChange={e=>setFullName(e.target.value)} required />
             <TextField label="Email" type="email" value={email} onChange={e=>setEmail(e.target.value)} required />
             <TextField label="Password" type="password" value={password} onChange={e=>setPassword(e.target.value)} required />
-            <TextField label="Invite code" value={invite} onChange={e=>setInvite(e.target.value)} required helperText="Use UCLIXN" />
+            <TextField 
+              label="Invite code" 
+              value={invite} 
+              onChange={e=>setInvite(e.target.value)} 
+              required 
+              helperText="Please enter the invite code provided to you" 
+            />
             <Button type="submit" variant="contained">Create account</Button>
             <Button onClick={()=>router.push('/login')}>Back to login</Button>
           </Stack>
@@ -49,4 +67,3 @@ export default function RegisterPage() {
     </Box>
   );
 }
-

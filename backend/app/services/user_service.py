@@ -29,7 +29,7 @@ class UserService:
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered"
+                detail="An account with this email address already exists. Please use a different email or try logging in."
             )
 
         # Create new user
