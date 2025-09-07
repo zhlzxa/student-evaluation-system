@@ -2,14 +2,20 @@
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
+import { useToast } from '@/components/providers/ToastProvider';
 
 export function useApi() {
   const { data: session } = useSession();
   const router = useRouter();
   const token = (session as any)?.access_token as string | undefined;
+  const { addToast } = useToast();
   
   const handleUnauthorized = useCallback(async () => {
     console.warn('Token expired or unauthorized, redirecting to login');
+    addToast({
+      message: 'Session expired. Please sign in again.',
+      severity: 'warning',
+    });
     
     if (session) {
       await signOut({ 
@@ -19,7 +25,7 @@ export function useApi() {
     }
     
     router.replace('/login');
-  }, [session, router]);
+  }, [session, router, addToast]);
   
   return useCallback(async (path: string, init?: RequestInit) => {
     const isForm = typeof FormData !== 'undefined' && init?.body instanceof FormData;
