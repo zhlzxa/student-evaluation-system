@@ -182,13 +182,15 @@ def orchestrate_run(run_id: int) -> str:
                 try:
                     log_agent_event(run_id, "url_rules_extractor", "start", f"Starting fallback URL extraction from {run.rule_set_url}")
                     
-                    # Use the unified service for URL extraction
-                    rule_set, url_rules = await RuleImportService.import_rules_from_url(
-                        db=db,
-                        url=run.rule_set_url,
-                        custom_requirements=run.custom_requirements,
-                        temporary=True,
-                        model_override=run_agent_models.get("url_rules_extractor")
+                    # Use the unified service for URL extraction (run async in sync context)
+                    rule_set, url_rules = asyncio.run(
+                        RuleImportService.import_rules_from_url(
+                            db=db,
+                            url=run.rule_set_url,
+                            custom_requirements=run.custom_requirements,
+                            temporary=True,
+                            model_override=run_agent_models.get("url_rules_extractor"),
+                        )
                     )
                     
                     # Link the created rule set to the run

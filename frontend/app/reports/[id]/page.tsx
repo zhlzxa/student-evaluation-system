@@ -30,10 +30,9 @@ export default function ReportPage() {
     item.gating?.decision?.toLowerCase() === 'reject'
   );
   
-  const borderlineCandidates = items.filter(item => 
-    item.gating?.decision?.toLowerCase() === 'maybe' || 
-    item.gating?.decision?.toLowerCase() === 'borderline'
-  ).sort((a, b) => (a.ranking?.final_rank || 999) - (b.ranking?.final_rank || 999));
+  const borderlineCandidates = items
+    .filter(item => item.gating?.decision?.toLowerCase() === 'middle')
+    .sort((a, b) => (a.ranking?.final_rank || 999) - (b.ranking?.final_rank || 999));
   
   const topCandidates = acceptedCandidates.slice(0, 3);
   const middleTierCandidates = acceptedCandidates.slice(3);
@@ -116,12 +115,9 @@ export default function ReportPage() {
                   </Box>
                 )}
                 
-                {/* 边缘案例 */}
+                {/* 中等案例 */}
                 {borderlineCandidates.length > 0 && (
                   <Box>
-                    <Typography variant="h6" sx={{ color: 'warning.main', mb: 2 }}>
-                      🤔 Borderline Cases - Requires Further Review
-                    </Typography>
                     <List>
                       {borderlineCandidates.map((candidate) => (
                         <ListItem key={candidate.applicant_id}>
@@ -176,7 +172,7 @@ export default function ReportPage() {
                 </Box>
                 <Box textAlign="center">
                   <Typography variant="h4" color="warning.main">{borderlineCandidates.length}</Typography>
-                  <Typography variant="body2">Borderline</Typography>
+                  <Typography variant="body2">Middle</Typography>
                 </Box>
                 <Box textAlign="center">
                   <Typography variant="h4" color="error.main">{rejectedCandidates.length}</Typography>
