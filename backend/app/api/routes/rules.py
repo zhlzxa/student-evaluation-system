@@ -380,6 +380,17 @@ async def generate_rule_set(
             "page_text_first_800": (text or "")[:800],
         }
 
+    # Idempotent get-or-update by name to avoid duplicates
+    stmt = select(AdmissionRuleSet).where(AdmissionRuleSet.name == name)
+    existing = db.execute(stmt).scalar_one_or_none()
+    if existing:
+        existing.description = f"Generated from {url}" if url else existing.description
+        existing.metadata_json = metadata
+        existing.english_rule_id = english_rule.id if english_rule else existing.english_rule_id
+        db.add(existing)
+        db.commit()
+        db.refresh(existing)
+        return existing
     obj = AdmissionRuleSet(
         name=name,
         description=f"Generated from {url}" if url else None,

@@ -108,16 +108,27 @@ class RuleImportService:
                 'created_at': datetime.utcnow().isoformat(),
             }
             
-            # Create rule set
-            rule_set = AdmissionRuleSet(
-                name=name,
-                description=f"Auto-generated from {url}" + (" (temporary)" if temporary else ""),
-                metadata_json=metadata,
-                english_rule_id=english_rule.id if english_rule else None,
-            )
-            
-            db.add(rule_set)
-            db.flush()  # Get ID without full commit
+            # Idempotent create-or-update by name to avoid UniqueViolation
+            existing = db.execute(
+                select(AdmissionRuleSet).where(AdmissionRuleSet.name == name)
+            ).scalar_one_or_none()
+
+            if existing:
+                # Merge essential fields; keep existing created_at
+                existing.description = f"Auto-generated from {url}" + (" (temporary)" if temporary else "")
+                existing.metadata_json = metadata
+                existing.english_rule_id = english_rule.id if english_rule else None
+                rule_set = existing
+                db.add(rule_set)
+            else:
+                rule_set = AdmissionRuleSet(
+                    name=name,
+                    description=f"Auto-generated from {url}" + (" (temporary)" if temporary else ""),
+                    metadata_json=metadata,
+                    english_rule_id=english_rule.id if english_rule else None,
+                )
+                db.add(rule_set)
+                db.flush()  # Get ID without full commit
             
             # Add rule_set_id to the response data
             url_rules['rule_set_id'] = rule_set.id
