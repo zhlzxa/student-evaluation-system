@@ -1,5 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { render, screen } from '@testing-library/react'
 import { AppShell } from '@/components/layout/AppShell'
 import { usePathname, useRouter } from 'next/navigation'
 import { vi } from 'vitest'
@@ -40,18 +39,14 @@ describe('AppShell', () => {
     expect(screen.getByTestId('test-content')).toBeInTheDocument()
   })
 
-  it('opens drawer when menu button is clicked', async () => {
-    const user = userEvent.setup()
+  it('shows navigation permanently', async () => {
     render(
       <AppShell>
         <div>Test Content</div>
       </AppShell>
     )
 
-    const menuButton = screen.getByTestId('MenuIcon').closest('button')!
-    await user.click(menuButton)
-
-    // Check if navigation items are visible
+    // Navigation items should be visible without clicking any menu
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
     expect(screen.getByText('New Assessment')).toBeInTheDocument()
     expect(screen.getByText('Evaluation History')).toBeInTheDocument()
@@ -59,20 +54,13 @@ describe('AppShell', () => {
   })
 
   it('navigates when navigation items are clicked', async () => {
-    const user = userEvent.setup()
     render(
       <AppShell>
         <div>Test Content</div>
       </AppShell>
     )
 
-    // Open drawer
-    const menuButton = screen.getByTestId('MenuIcon').closest('button')!
-    await user.click(menuButton)
-
-    // Click on New Assessment
-    const newAssessmentButton = screen.getByText('New Assessment')
-    await user.click(newAssessmentButton)
+    screen.getByText('New Assessment').click()
 
     expect(mockPush).toHaveBeenCalledWith('/assessments/new')
   })
@@ -85,10 +73,6 @@ describe('AppShell', () => {
         <div>Test Content</div>
       </AppShell>
     )
-
-    // Open drawer
-    const menuButton = screen.getByTestId('MenuIcon').closest('button')!
-    fireEvent.click(menuButton)
 
     // The Rules item should be selected
     const rulesItem = screen.getByText('Rules').closest('[role="button"]')

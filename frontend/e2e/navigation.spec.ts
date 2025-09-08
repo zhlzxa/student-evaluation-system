@@ -13,9 +13,6 @@ test.describe('Navigation', () => {
     ];
 
     for (const item of navigationItems) {
-      // Open navigation drawer
-      await page.getByTestId('MenuIcon').click();
-      
       // Click navigation item
       await page.getByText(item.name).click();
       
@@ -30,30 +27,16 @@ test.describe('Navigation', () => {
   test('should close navigation drawer when clicking outside or on item', async ({ page }) => {
     await page.goto('/');
 
-    // Open navigation drawer
-    await page.getByTestId('MenuIcon').click();
+    // Navigation is always visible; verify items are present and clickable
     await expect(page.getByText('Dashboard')).toBeVisible();
-
-    // Click on a navigation item (should close drawer)
     await page.getByText('Dashboard').click();
-
-    // Wait a moment and check if drawer is closed by checking if nav items are not visible
-    await page.waitForTimeout(500);
-    
-    // The drawer should be closed, so navigation items shouldn't be immediately visible
-    // We'll verify by opening it again
-    await page.getByTestId('MenuIcon').click();
-    await expect(page.getByText('Dashboard')).toBeVisible();
   });
 
   test('should highlight current page in navigation', async ({ page }) => {
     // Go to Rules page
     await page.goto('/rules');
 
-    // Open navigation
-    await page.getByTestId('MenuIcon').click();
-
-    // The Rules item should have selected styling
+    // The Rules item should have selected styling (permanent nav)
     const rulesButton = page.getByText('Rules').locator('xpath=ancestor::div[@role="button"]');
     await expect(rulesButton).toHaveClass(/Mui-selected/);
   });

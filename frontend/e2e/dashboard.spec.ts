@@ -9,13 +9,10 @@ test.describe('Dashboard', () => {
     await expect(page.getByText('Dashboard')).toBeVisible();
   });
 
-  test('should open navigation drawer when menu button is clicked', async ({ page }) => {
+  test('should show navigation permanently', async ({ page }) => {
     await page.goto('/');
 
-    // Click the menu button
-    await page.getByTestId('MenuIcon').click();
-
-    // Check if navigation items are visible
+    // Navigation items are visible without clicking any menu
     await expect(page.getByText('Dashboard')).toBeVisible();
     await expect(page.getByText('New Assessment')).toBeVisible();
     await expect(page.getByText('Runs')).toBeVisible();
@@ -24,9 +21,6 @@ test.describe('Dashboard', () => {
 
   test('should navigate to new assessment page', async ({ page }) => {
     await page.goto('/');
-
-    // Open navigation
-    await page.getByTestId('MenuIcon').click();
     
     // Click on New Assessment
     await page.getByText('New Assessment').click();

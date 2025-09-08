@@ -8,17 +8,22 @@ import {
   Stack,
   Typography,
   Card,
-  CardContent,
-  CardActions,
   Box,
-  Divider,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
-  DialogActions
+  DialogActions,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton
 } from '@mui/material';
-import { Assessment, Visibility, Description, Schedule, CheckCircle, HourglassEmpty, Cancel, Delete } from '@mui/icons-material';
+import { Assessment, Visibility, Schedule, CheckCircle, HourglassEmpty, Cancel, Delete, Add } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 
 export default function EvaluationHistoryPage() {
@@ -89,120 +94,111 @@ export default function EvaluationHistoryPage() {
         minHeight: '100vh',
         backgroundColor: '#ffffff',
         py: 4,
-        // Keep horizontal padding to 0 here; AppShell's Container
-        // already handles gutters to maintain perfect symmetry
-        px: 0
+        px: { xs: 2, sm: 4, md: 6, lg: 8 }
       }}
     >
           <Stack spacing={4}>
-          <Box textAlign="center">
-            <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-              <Assessment color="primary" sx={{ fontSize: 40 }} />
-              Evaluation History
-            </Typography>
-            <Typography variant="h6" color="text.secondary">
-              View and manage your student evaluation sessions
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                sm: 'repeat(2, 1fr)',
-                md: 'repeat(3, 1fr)'
-              },
-              gap: 4,
-              justifyItems: 'center'
-            }}
-          >
-        {(Array.isArray(data) ? data : []).map((evaluation: any) => (
-          <Box key={evaluation.id} sx={{ width: '100%', maxWidth: 400 }}>
-            <Card 
-              elevation={2} 
-              sx={{ 
-                height: '100%',
-                minHeight: 280,
-                display: 'flex',
-                flexDirection: 'column',
-                transition: 'transform 0.2s, box-shadow 0.2s',
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+            <Box>
+              <Typography 
+                variant="h4" 
+                component="h1" 
+                sx={{ 
+                  fontWeight: 600,
+                  fontSize: '2rem',
+                  color: 'text.primary',
+                  mb: 0.5
+                }}
+              >
+                Assessments
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                View and manage your admission review sessions
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => router.push('/assessments/new')}
+              sx={{
+                backgroundColor: 'primary.main',
+                color: 'primary.contrastText',
+                px: 3,
+                py: 1.5,
+                borderRadius: 2,
+                fontWeight: 600,
+                textTransform: 'none',
+                boxShadow: 2,
                 '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: 4,
+                  backgroundColor: 'primary.dark',
+                  boxShadow: 3,
                 }
               }}
             >
-              <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                  <Typography variant="h6" component="div" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Assessment color="primary" />
-                    Evaluation #{evaluation.id}
-                  </Typography>
-                  <Chip
-                    icon={getStatusIcon(evaluation.status)}
-                    label={evaluation.status}
-                    color={getStatusColor(evaluation.status)}
-                    variant="outlined"
-                    size="small"
-                  />
-                </Box>
-                
-                <Divider sx={{ mb: 2 }} />
-                
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Schedule fontSize="small" />
-                    Started: {new Date(evaluation.created_at).toLocaleString()}
-                  </Typography>
-                </Box>
-                
-                <Typography variant="body2" color="text.secondary">
-                  {evaluation.status === 'completed' 
-                    ? 'Assessment completed - ready for review' 
-                    : evaluation.status === 'running' 
-                    ? 'Assessment in progress...' 
-                    : `Status: ${evaluation.status}`
-                  }
-                </Typography>
-              </CardContent>
-              
-              <CardActions sx={{ p: 2, pt: 1, display: 'flex', gap: 1, alignItems: 'stretch' }}>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  startIcon={<Visibility />}
-                  onClick={() => router.push(`/assessments/runs/${evaluation.id}`)}
-                  size="medium"
-                  sx={{ height: 50, flex: 1 }}
-                >
-                  View Details
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<Description />}
-                  onClick={() => router.push(`/reports/${evaluation.id}`)}
-                  disabled={evaluation.status !== 'completed'}
-                  size="medium"
-                  sx={{ height: 50, flex: 1 }}
-                >
-                  Final Report
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<Delete />}
-                  onClick={() => handleDeleteClick(evaluation)}
-                  size="medium"
-                  sx={{ height: 50, flex: 1 }}
-                >
-                  Delete
-                </Button>
-              </CardActions>
-            </Card>
+              Create
+            </Button>
           </Box>
-        ))}
-          </Box>
+          <TableContainer component={Paper} elevation={2}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Evaluation</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Started</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {(Array.isArray(data) ? data : []).map((evaluation: any) => (
+                    <TableRow 
+                      key={evaluation.id}
+                      sx={{ '&:hover': { backgroundColor: 'action.hover' } }}
+                    >
+                      <TableCell sx={{ py: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Assessment color="primary" />
+                          <Typography variant="body1" fontWeight="medium">
+                            Evaluation #{evaluation.id}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell sx={{ py: 2 }}>
+                        <Chip
+                          icon={getStatusIcon(evaluation.status)}
+                          label={evaluation.status}
+                          color={getStatusColor(evaluation.status)}
+                          variant="outlined"
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell sx={{ py: 2 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          {new Date(evaluation.created_at).toLocaleString()}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center" sx={{ py: 2 }}>
+                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                          <IconButton
+                            color="primary"
+                            onClick={() => router.push(`/assessments/runs/${evaluation.id}`)}
+                            title="View Details"
+                          >
+                            <Visibility />
+                          </IconButton>
+                          <IconButton
+                            color="error"
+                            onClick={() => handleDeleteClick(evaluation)}
+                            title="Delete"
+                          >
+                            <Delete />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           
           {(!data || data.length === 0) && (
             <Card elevation={1} sx={{ p: 4, textAlign: 'center' }}>

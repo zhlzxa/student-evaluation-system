@@ -1,21 +1,19 @@
 "use client";
 import { PropsWithChildren, useMemo } from 'react';
-import { AppBar, Box, Container, CssBaseline, Drawer, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Toolbar, Typography, Button } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
+import { AppBar, Box, Container, CssBaseline, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Toolbar, Typography, Button } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import RuleIcon from '@mui/icons-material/Rule';
 import HistoryIcon from '@mui/icons-material/History';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
 import { signOut, useSession } from 'next-auth/react';
 
 export function AppShell({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
-  const [open, setOpen] = useState(false);
+  const drawerWidth = 260;
   
   const nav = useMemo(() => [
     { label: 'Dashboard', icon: <DashboardIcon />, href: '/' },
@@ -35,11 +33,13 @@ export function AppShell({ children }: PropsWithChildren) {
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
-      <AppBar position="fixed">
+      <AppBar 
+        position="fixed"
+        sx={{
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+        }}
+      >
         <Toolbar>
-          <IconButton color="inherit" edge="start" onClick={() => setOpen(true)}>
-            <MenuIcon />
-          </IconButton>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>Student Evaluation System</Typography>
           {session && (
             <Button 
@@ -52,11 +52,23 @@ export function AppShell({ children }: PropsWithChildren) {
           )}
         </Toolbar>
       </AppBar>
-      <Drawer anchor="left" open={open} onClose={() => setOpen(false)}>
-        <Box role="presentation" sx={{ width: 260 }}>
+      <Drawer
+        anchor="left"
+        variant="permanent"
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+          },
+        }}
+      >
+        <Toolbar />
+        <Box role="presentation">
           <List>
             {nav.map(item => (
-              <ListItemButton key={item.href} selected={pathname === item.href} onClick={() => { router.push(item.href); setOpen(false); }}>
+              <ListItemButton key={item.href} selected={pathname === item.href} onClick={() => { router.push(item.href); }}>
                 <ListItemIcon>{item.icon}</ListItemIcon>
                 <ListItemText primary={item.label} />
               </ListItemButton>
@@ -66,7 +78,7 @@ export function AppShell({ children }: PropsWithChildren) {
       </Drawer>
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Toolbar />
-        <Container maxWidth="lg">
+        <Container maxWidth={false} disableGutters>
           {children}
         </Container>
       </Box>
