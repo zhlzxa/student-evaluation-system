@@ -243,6 +243,3 @@ def get_run_logs(
         }
         for it in items
     ]
-
-
-    ]
