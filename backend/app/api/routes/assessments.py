@@ -16,6 +16,7 @@ from app.schemas.assessments import (
     AssessmentRunRead,
     AssessmentRunDetail,
 )
+from app.services.rule_import_service import RuleImportService
 from app.agents.model_config import get_supported_models, get_agent_types
 from app.services.storage import save_zip, extract_zip, iter_applicant_folders, guess_content_type, read_text_preview
 import logging
@@ -66,6 +67,66 @@ def create_run(
     db.commit()
     db.refresh(run)
     return run
+
+
+@router.post("/runs/create-with-url", response_model=AssessmentRunRead)
+async def create_run_with_url_import(
+    data: AssessmentRunCreate, 
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_active_user)]
+):
+    """Create assessment run and immediately import rules from URL if provided.
+    
+    This endpoint performs URL rule extraction before creating the run,
+    ensuring the rule set is available before concurrent agents start.
+    """
+    if not data.rule_set_url:
+        raise HTTPException(status_code=400, detail="rule_set_url is required for this endpoint")
+    
+    # Validate optional agent_models mapping
+    agent_models: dict[str, str] | None = None
+    if data.agent_models:
+        supported = set(get_supported_models())
+        valid_agents = set(get_agent_types())
+        invalid_agents = [k for k in data.agent_models.keys() if k not in valid_agents]
+        invalid_models = [m for m in data.agent_models.values() if m not in supported]
+        if invalid_agents:
+            raise HTTPException(status_code=400, detail=f"Invalid agent types: {invalid_agents}")
+        if invalid_models:
+            raise HTTPException(status_code=400, detail=f"Unsupported models: {invalid_models}")
+        agent_models = dict(data.agent_models)
+    
+    # Import rules from URL first
+    try:
+        logging.info(f"Creating assessment run with URL import: {data.rule_set_url}")
+        
+        rule_set, url_result = await RuleImportService.import_rules_from_url(
+            db=db,
+            url=data.rule_set_url,
+            custom_requirements=data.custom_requirements,
+            temporary=True,  # Mark as temporary for assessment runs
+            model_override=agent_models.get("url_rules_extractor") if agent_models else None,
+        )
+        
+        # Create assessment run with the imported rule set
+        run = AssessmentRun(
+            rule_set_id=rule_set.id,
+            rule_set_url=data.rule_set_url,
+            custom_requirements=data.custom_requirements or [],
+            agent_models=agent_models,
+            status="created",
+        )
+        
+        db.add(run)
+        db.commit()
+        db.refresh(run)
+        
+        logging.info(f"Created assessment run {run.id} with imported rule set {rule_set.id}")
+        return run
+        
+    except Exception as e:
+        logging.exception(f"Failed to create assessment run with URL import: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to import rules from URL: {str(e)}")
 
 
 @router.get("/runs", response_model=list[AssessmentRunRead])

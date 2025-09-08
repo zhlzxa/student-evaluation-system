@@ -35,6 +35,12 @@ from app.services.degree_ingest_service import (
 from app.services.degree_bs4 import parse_country_requirements
 from datetime import datetime
 from app.services.degree_bs4 import parse_all_tables
+from app.services.rule_import_service import RuleImportService
+from app.schemas.rule_import import (
+    RuleImportFromUrlCreate,
+    RuleImportFromUrlResponse,
+    RuleImportPreviewResponse,
+)
 
 
 router = APIRouter(prefix="/rules", tags=["rules"])
@@ -198,6 +204,108 @@ def list_degree_sources(db: Session = Depends(get_db)):
 async def preview(url: str) -> dict[str, str]:
     text = await preview_page_text(url)
     return {"url": url, "preview": text}
+
+
+@router.post("/import-from-url/preview", response_model=RuleImportPreviewResponse)
+async def preview_url_import(data: RuleImportFromUrlCreate):
+    """Preview rules extraction from URL without creating a rule set"""
+    try:
+        result = await RuleImportService.preview_url_rules(
+            url=data.url,
+            custom_requirements=data.custom_requirements,
+        )
+        
+        return RuleImportPreviewResponse(
+            url=data.url,
+            programme_title=result.get('programme_title'),
+            english_level=result.get('english_level'),
+            degree_requirement_class=result.get('degree_requirement_class'),
+            text_length=result.get('text_length', 0),
+            text_preview=result.get('text_preview', ''),
+            checklists=result.get('checklists', {}),
+            extraction_method=result.get('extraction_method', 'unknown'),
+        )
+    except Exception as e:
+        logging.exception("Failed to preview URL import: %s", e)
+        raise HTTPException(status_code=500, detail=f"Failed to preview URL: {str(e)}")
+
+
+@router.post("/import-from-url", response_model=RuleImportFromUrlResponse)
+async def import_rules_from_url(data: RuleImportFromUrlCreate, db: Session = Depends(get_db)):
+    """Import rules from URL and create a rule set (for rule management)"""
+    try:
+        rule_set, result = await RuleImportService.import_rules_from_url(
+            db=db,
+            url=data.url,
+            custom_requirements=data.custom_requirements,
+            name=data.name,
+            temporary=data.temporary,
+        )
+        
+        db.commit()
+        db.refresh(rule_set)
+        
+        return RuleImportFromUrlResponse(
+            rule_set_id=rule_set.id,
+            name=rule_set.name,
+            url=data.url,
+            programme_title=result.get('programme_title'),
+            english_level=result.get('english_level'),
+            degree_requirement_class=result.get('degree_requirement_class'),
+            text_length=result.get('text_length', 0),
+            checklists=result.get('checklists', {}),
+            temporary=data.temporary,
+            extraction_method=result.get('extraction_method', 'unknown'),
+        )
+    except Exception as e:
+        logging.exception("Failed to import rules from URL: %s", e)
+        raise HTTPException(status_code=500, detail=f"Failed to import from URL: {str(e)}")
+
+
+@router.post("/import-from-url/temporary", response_model=RuleImportFromUrlResponse)
+async def create_temporary_rule_set_from_url(data: RuleImportFromUrlCreate, db: Session = Depends(get_db)):
+    """Create a temporary rule set from URL (for assessment workflow)"""
+    # Force temporary flag
+    data.temporary = True
+    
+    try:
+        rule_set, result = await RuleImportService.import_rules_from_url(
+            db=db,
+            url=data.url,
+            custom_requirements=data.custom_requirements,
+            name=data.name,
+            temporary=True,
+        )
+        
+        db.commit()
+        db.refresh(rule_set)
+        
+        return RuleImportFromUrlResponse(
+            rule_set_id=rule_set.id,
+            name=rule_set.name,
+            url=data.url,
+            programme_title=result.get('programme_title'),
+            english_level=result.get('english_level'),
+            degree_requirement_class=result.get('degree_requirement_class'),
+            text_length=result.get('text_length', 0),
+            checklists=result.get('checklists', {}),
+            temporary=True,
+            extraction_method=result.get('extraction_method', 'unknown'),
+        )
+    except Exception as e:
+        logging.exception("Failed to create temporary rule set from URL: %s", e)
+        raise HTTPException(status_code=500, detail=f"Failed to create temporary rule set: {str(e)}")
+
+
+@router.delete("/import-from-url/cleanup")
+async def cleanup_temporary_rule_sets(max_age_hours: int = 24, db: Session = Depends(get_db)):
+    """Clean up old temporary rule sets"""
+    try:
+        deleted_count = RuleImportService.cleanup_temporary_rule_sets(db, max_age_hours)
+        return {"deleted": deleted_count, "max_age_hours": max_age_hours}
+    except Exception as e:
+        logging.exception("Failed to cleanup temporary rule sets: %s", e)
+        raise HTTPException(status_code=500, detail=f"Cleanup failed: {str(e)}")
 
 
 @router.post("/generate-set", response_model=AdmissionRuleSetRead)

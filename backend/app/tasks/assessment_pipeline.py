@@ -170,83 +170,49 @@ def orchestrate_run(run_id: int) -> str:
                             "levels": er.levels,
                         }
             
-            # Second priority: Extract rules from source_url if no rule_set_id
+            # Second priority: Fallback URL extraction if no rule_set_id (for backward compatibility)
             elif run.rule_set_url:
+                logger.warning(f"Using fallback URL extraction for run {run.id}. Consider using /runs/create-with-url endpoint for better performance.")
                 logger.info(f"No rule_set_id found, extracting rules from rule_set_url: {run.rule_set_url}")
                 
-                # Import URL rules extractor
-                from app.agents.url_rules_extractor import extract_rules_from_url
+                # Import the service for consistency
+                from app.services.rule_import_service import RuleImportService
                 from app.services.logging_service import log_agent_event
                 
                 try:
-                    log_agent_event(run_id, "url_rules_extractor", "start", f"Starting URL extraction from {run.rule_set_url}")
+                    log_agent_event(run_id, "url_rules_extractor", "start", f"Starting fallback URL extraction from {run.rule_set_url}")
                     
-                    # Extract rules from URL with custom requirements
-                    url_rules = asyncio.run(extract_rules_from_url(
+                    # Use the unified service for URL extraction
+                    rule_set, url_rules = await RuleImportService.import_rules_from_url(
+                        db=db,
                         url=run.rule_set_url,
                         custom_requirements=run.custom_requirements,
+                        temporary=True,
                         model_override=run_agent_models.get("url_rules_extractor")
-                    ))
+                    )
                     
-                    logger.info(f"URL extraction completed. Results: {url_rules}")
+                    # Link the created rule set to the run
+                    run.rule_set_id = rule_set.id
+                    db.add(run)
+                    db.commit()
+                    
+                    checklists = url_rules.get('checklists', {})
+                    logger.info(f"Fallback URL extraction completed for run {run.id}, created rule set {rule_set.id}")
                     log_agent_event(run_id, "url_rules_extractor", "completed", 
-                                  f"URL extraction completed. Extracted {len(url_rules.get('checklists', {}))} agent checklists")
+                                  f"Fallback URL extraction completed. Created rule set {rule_set.id} with {len(checklists)} agent checklists")
                     
-                    if url_rules and url_rules.get('checklists'):
-                        checklists = url_rules['checklists']
-                        
-                        # Log the extracted checklists for debugging
-                        for agent, agent_checklist in checklists.items():
-                            logger.info(f"Extracted checklist for {agent}: {len(agent_checklist)} items")
-                            log_agent_event(run_id, "url_rules_extractor", "checklist", 
-                                          f"Extracted {len(agent_checklist)} items for {agent}: {agent_checklist}")
-                        
-                        # Extract target degree class
-                        if url_rules.get('degree_requirement_class'):
-                            target_degree_class = url_rules['degree_requirement_class'].upper()
-                            logger.info(f"Extracted degree requirement class: {target_degree_class}")
-                        
-                        # Extract english level hint
-                        english_level_hint = url_rules.get('english_level')
-                        if english_level_hint:
-                            logger.info(f"Extracted english level hint: {english_level_hint}")
-                        
-                        # Create a temporary rule set for this run to avoid re-extraction
-                        from app.models import AdmissionRuleSet
-                        programme_title = url_rules.get('programme_title', f"Auto-extracted from {run.rule_set_url}")
-                        
-                        temp_rule_set = AdmissionRuleSet(
-                            name=programme_title,
-                            description=f"Auto-generated from {run.rule_set_url}",
-                            metadata_json={
-                                'checklists': checklists,
-                                'english_level': english_level_hint,
-                                'degree_requirement_class': target_degree_class,
-                                'rule_set_url': run.rule_set_url,
-                                'text_length': url_rules.get('text_length', 0),
-                                'auto_generated': True
-                            }
-                        )
-                        
-                        # Save the temporary rule set and link it to the run
-                        db.add(temp_rule_set)
-                        db.flush()  # Get the ID without committing
-                        
-                        run.rule_set_id = temp_rule_set.id
-                        db.add(run)
-                        db.commit()
-                        
-                        logger.info(f"Created temporary rule set {temp_rule_set.id} for run {run.id}")
-                        log_agent_event(run_id, "url_rules_extractor", "success", 
-                                      f"Created temporary rule set {temp_rule_set.id} with {len(checklists)} agent checklists")
-                    else:
-                        logger.warning(f"Failed to extract rules from {run.rule_set_url}, url_rules: {url_rules}")
-                        log_agent_event(run_id, "url_rules_extractor", "warning", 
-                                      f"Failed to extract useful rules from {run.rule_set_url}")
+                    # Update target degree class and english level hint
+                    if url_rules.get('degree_requirement_class'):
+                        target_degree_class = url_rules['degree_requirement_class'].upper()
+                        logger.info(f"Extracted degree requirement class: {target_degree_class}")
+                    
+                    english_level_hint = url_rules.get('english_level')
+                    if english_level_hint:
+                        logger.info(f"Extracted english level hint: {english_level_hint}")
                         
                 except Exception as url_error:
-                    logger.error(f"Error during URL rules extraction: {str(url_error)}")
-                    log_agent_event(run_id, "url_rules_extractor", "error", f"URL extraction failed: {str(url_error)}")
+                    logger.error(f"Error during fallback URL rules extraction: {str(url_error)}")
+                    log_agent_event(run_id, "url_rules_extractor", "error", f"Fallback URL extraction failed: {str(url_error)}")
                     # Continue with empty checklists as fallback
                     
         except Exception as e:

@@ -73,17 +73,12 @@ class URLRulesExtractor:
         custom_requirements: list[str] | None = None,
         model_override: Optional[str] = None,
     ) -> dict[str, Any]:
-        """Optional Azure agent parsing (imported lazily)."""
+        """Optional Azure agent parsing using proper Azure AI client."""
         try:
-            # Lazy imports to avoid hard dependency at import time
-            from azure.identity.aio import DefaultAzureCredential  # type: ignore
-            from semantic_kernel.agents import (  # type: ignore
-                AzureAIAgent,
-                AzureAIAgentSettings,
-                AzureAIAgentThread,
-            )
+            # Use the azure_client helper instead of direct agent management
+            from app.agents.azure_client import run_single_turn
         except Exception as e:
-            raise RuntimeError(f"Azure dependencies unavailable: {e}")
+            raise RuntimeError(f"Azure client unavailable: {e}")
 
         settings = self.settings
         deployment = model_override or settings.AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME
@@ -93,54 +88,23 @@ class URLRulesExtractor:
         # Build prompt
         prompt = self._build_parsing_prompt(page_text, custom_requirements)
 
-        # Initialize agent client
-        credential = DefaultAzureCredential()
-        agent = AzureAIAgent(
-            AzureAIAgentSettings(
-                endpoint=settings.AZURE_AI_AGENT_ENDPOINT,
-                model=deployment,
-                grounding_connection=settings.bing_connection_name,
-            ),
-            credentials=credential,
-        )
-        thread: Any | None = None
         try:
-            thread = await agent.create_thread()
-            await thread.add_message("user", prompt)
-            response_messages = await agent.get_response(thread)
-
-            # Extract text content from response
-            response_text = ""
-            if response_messages:
-                for msg in response_messages:
-                    content = getattr(msg, "content", None)
-                    if content:
-                        response_text += str(content)
-                    else:
-                        items = getattr(msg, "items", None)
-                        if items:
-                            for it in items:
-                                t = getattr(it, "text", None)
-                                if t:
-                                    response_text += t
-                        else:
-                            response_text += str(msg)
-            if not response_text:
-                response_text = str(response_messages)
+            # Use single-turn conversation with Azure AI agent
+            response_text = await run_single_turn(
+                name="URL-Rules-Extractor",
+                instructions="You are an expert at extracting admission requirements from university programme webpages. Extract the information exactly as requested in the user's prompt.",
+                message=prompt,
+                with_bing_grounding=True,  # Enable web grounding for better accuracy
+                model=deployment,
+            )
 
             # Parse JSON text from agent
             parsed = self._parse_agent_response(response_text, custom_requirements)
             return parsed
-        finally:
-            try:
-                if thread:
-                    await thread.delete()
-            except Exception:
-                pass
-            try:
-                await agent.delete()
-            except Exception:
-                pass
+            
+        except Exception as e:
+            logger.error(f"Azure agent parsing failed: {e}")
+            raise e
 
     def _build_parsing_prompt(self, page_text: str, custom_requirements: list[str] | None = None) -> str:
         max_text_length = 15000

@@ -8,6 +8,11 @@ from .rules import (
     AdmissionRuleSetCreate,
     AdmissionRuleSetRead,
 )
+from .rule_import import (
+    RuleImportFromUrlCreate,
+    RuleImportFromUrlResponse,
+    RuleImportPreviewResponse,
+)
 
 __all__ = [
     "DegreeEquivalencySourceCreate",
@@ -18,5 +23,8 @@ __all__ = [
     "EnglishRuleRead",
     "AdmissionRuleSetCreate",
     "AdmissionRuleSetRead",
+    "RuleImportFromUrlCreate",
+    "RuleImportFromUrlResponse",
+    "RuleImportPreviewResponse",
 ]
 
