@@ -13,8 +13,7 @@ import {
   Stack,
   Divider,
   Card,
-  CardContent,
-  LinearProgress
+  CardContent
 } from '@mui/material';
 import { CheckCircle, Cancel, Compare, EmojiEvents, Gavel } from '@mui/icons-material';
 
@@ -133,19 +132,21 @@ export default function EvaluationProcess({ data }: { data: EvaluationData }) {
                 <TableCell>Rank</TableCell>
                 <TableCell>Applicant</TableCell>
                 <TableCell>Weighted Score</TableCell>
-                <TableCell>Progress</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {items
                 .filter(item => item.ranking)
                 .sort((a, b) => (a.ranking?.final_rank || 999) - (b.ranking?.final_rank || 999))
-                .map((item) => (
+                .map((item) => {
+                  const finalRank = item.ranking?.final_rank ?? 999;
+                  const weightedScore = item.ranking?.weighted_score;
+                  return (
                   <TableRow key={item.applicant_id}>
                     <TableCell>
                       <Chip
-                        label={`#${item.ranking?.final_rank}`}
-                        color={item.ranking?.final_rank <= 3 ? 'primary' : 'default'}
+                        label={`#${finalRank}`}
+                        color={finalRank <= 3 ? 'primary' : 'default'}
                         size="small"
                       />
                     </TableCell>
@@ -156,24 +157,12 @@ export default function EvaluationProcess({ data }: { data: EvaluationData }) {
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2">
-                        {item.ranking?.weighted_score?.toFixed(2) || 'N/A'}
+                        {weightedScore?.toFixed(2) || 'N/A'}
                       </Typography>
                     </TableCell>
-                    <TableCell width="120px">
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <LinearProgress
-                          variant="determinate"
-                          value={((item.ranking?.weighted_score || 0) / 100) * 100}
-                          sx={{ flexGrow: 1, mr: 1, height: 6, borderRadius: 1 }}
-                          color={item.ranking?.final_rank <= 3 ? 'primary' : 'inherit'}
-                        />
-                        <Typography variant="caption">
-                          {((item.ranking?.weighted_score || 0) * 100).toFixed(0)}%
-                        </Typography>
-                      </Box>
-                    </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
             </TableBody>
           </Table>
         </CardContent>
