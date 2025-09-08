@@ -141,7 +141,7 @@ async def degree_agent(
         "(4) CRITICAL - For China/India applicants: "
         "   - If China (CHN): Call ChinaIndiaEligibilityPlugin-evaluate_china_applicant(institution_name, major_field, weighted_average_mark, target_uk_class) "
         "   - If India (IND): Call ChinaIndiaEligibilityPlugin-evaluate_india_applicant(institution_name, mark_value, mark_scale, target_uk_class) "
-        "   - These functions handle UCL's official requirements with precise thresholds and institution classifications "
+        "   - These functions provide authoritative eligibility determinations with precise thresholds and institution classifications "
         "   - Use ChinaIndiaEligibilityPlugin-is_country_supported(country) to check if specialized evaluation is available "
         "(5) For other countries: Call DegreePolicyPlugin-get_policy_for_country(country, target_class) to retrieve general policy requirements; "
         "(6) Extract degree result (percent/CGPA) from transcripts; "
@@ -152,7 +152,12 @@ async def degree_agent(
         "(11) MANDATORY: Search for and include the institution's current QS World University Ranking via web search. "
         "IMPORTANT: The China/India plugins provide authoritative eligibility determinations - trust their results over general rules. "
         "Use minimal tokens - focus on transcripts and certificates for degree info. "
-        "Return strict JSON: {country:string|null, institution:string|null, meets_requirement:boolean|null, qs_rank:int|null, score:number|null, subject_fit:boolean|null, missing_prerequisites:string[], evidence:string[], policy_source:string|null}."
+        "\n"
+        "MANDATORY OUTPUT FORMAT: Return ONLY valid JSON (no markdown, bullets, or prose). "
+        "All reasoning and analysis must be included in the evidence array, not as free text. "
+        "Do not ask questions or request confirmation. "
+        "The score field MUST be a number from 0 to 10 (never null). "
+        "Return JSON exactly with keys: {country:string|null, institution:string|null, meets_requirement:boolean|null, qs_rank:int|null, score:number, subject_fit:boolean|null, missing_prerequisites:string[], evidence:string[], policy_source:string|null}."
     )
     prompt = "\n".join([
         f"Target UK class: {target_class}",
@@ -172,7 +177,29 @@ async def degree_agent(
         applicant_id=applicant_id,
     )
     result = parse_agent_json(ans)
-    if result is None:
+    required_keys = {"country", "institution", "meets_requirement", "qs_rank", "score", "subject_fit", "missing_prerequisites", "evidence", "policy_source"}
+    needs_retry = (
+        result is None
+        or not isinstance(result, dict)
+        or not required_keys.issubset(set(result.keys()))
+        or result.get("score") is None
+    )
+    if needs_retry:
+        strict_instructions = instructions + "\nCRITICAL: Output must be ONLY the JSON object with the required keys and score 0-10."
+        ans2 = await _ask_agent(
+            "DegreeAgentStrict",
+            strict_instructions,
+            prompt,
+            with_bing=True,
+            plugins=[DegreeScorePlugin(), DegreePolicyPlugin(), ChinaIndiaEligibilityPlugin(), DocStorePlugin(applicant_id, run_id)],
+            agent_type="degree",
+            model_override=model_override,
+            run_id=run_id,
+            applicant_id=applicant_id,
+        )
+        result2 = parse_agent_json(ans2)
+        if result2 is not None and isinstance(result2, dict) and required_keys.issubset(set(result2.keys())) and result2.get("score") is not None:
+            return result2
         return {"country": None, "institution": None, "meets_requirement": None, "qs_rank": None, "score": None, "subject_fit": None, "missing_prerequisites": [], "evidence": [], "policy_source": None}
     return result
 
@@ -185,7 +212,12 @@ async def experience_agent(applicant_id: int, run_id: int, checklist: list[str] 
         "Use Bing to gauge company reputation when found. "
         "Score (0-10): top companies >2 months -> 10; Tencent/Huawei -> 8; general IT -> 4; other work -> 2; school projects based on relevance. "
         "Use minimal tokens - focus on CV and experience-related documents. "
-        "Return JSON: score (0-10), highlights (array), evidence (array)."
+        "\n"
+        "MANDATORY OUTPUT FORMAT: Return ONLY valid JSON (no markdown, bullets, prose, or code fences). "
+        "All reasoning and analysis must be included in the evidence array, not as free text. "
+        "Do not ask questions or request confirmation. "
+        "The score field MUST be a number from 0 to 10 (never null). "
+        "Return JSON exactly with keys: {score:number, highlights:string[], evidence:string[]}."
     )
     prompt = f"Checklist: {checklist or []}\nUse document access functions to find work experience and project information."
     ans = await _ask_agent(
@@ -200,7 +232,34 @@ async def experience_agent(applicant_id: int, run_id: int, checklist: list[str] 
         applicant_id=applicant_id,
     )
     result = parse_agent_json(ans)
-    if result is None:
+    required_keys = {"score", "highlights", "evidence"}
+    needs_retry = (
+        result is None
+        or not isinstance(result, dict)
+        or not required_keys.issubset(set(result.keys()))
+        or not isinstance(result.get("score"), (int, float))
+    )
+    if needs_retry:
+        strict_instructions = instructions + "\nCRITICAL: Output must be ONLY the JSON object with the required keys and score 0-10."
+        ans2 = await _ask_agent(
+            "ExperienceAgentStrict",
+            strict_instructions,
+            prompt,
+            with_bing=True,
+            plugins=[DocStorePlugin(applicant_id, run_id)],
+            agent_type="experience",
+            model_override=model_override,
+            run_id=run_id,
+            applicant_id=applicant_id,
+        )
+        result2 = parse_agent_json(ans2)
+        if (
+            result2 is not None
+            and isinstance(result2, dict)
+            and required_keys.issubset(set(result2.keys()))
+            and isinstance(result2.get("score"), (int, float))
+        ):
+            return result2
         return {"score": None, "highlights": [], "evidence": []}
     return result
 
