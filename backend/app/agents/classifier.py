@@ -30,8 +30,8 @@ def _build_instructions() -> str:
         "Guidelines: personal_statement is the applicant's essay about motivation; reference_letter is a recommender's letter; "
         "cv_resume is the candidate's resume; transcript lists courses and grades; diploma_certificate certifies a degree; "
         "language_test is IELTS/TOEFL or similar; certificate_award are honors/awards; internship_proof verifies internships/work; "
-        "general_overview includes brochures or programme overviews; otherwise choose other. "
-        "Respond with only the label, lowercase, no extra words."
+        "general_overview includes brochures or programme overviews; otherwise choose other. \n\n"
+        "CRITICAL: Respond with ONLY the label, lowercase, no extra words, no explanations, no formatting."
     )
 
 
@@ -56,12 +56,26 @@ def classify_document(text: str, model_override: Optional[str] = None) -> Option
         model = model_override or get_model_for_agent("classifier")
         result = run_single_turn_blocking(name="DocClassifier", instructions=instructions, message=prompt, model=model)
         label = (result or "").strip().strip("`\"'")
+        
+        # Check if valid label
         if label in ALLOWED_LABELS:
             return label
         # Try to normalize common variants
         normalized = label.lower()
         if normalized in ALLOWED_LABELS:
             return normalized
+        
+        # Retry with more explicit instructions if first attempt failed
+        retry_instructions = instructions + "\n\nCRITICAL RETRY: Previous response was invalid. Return ONLY one of these exact labels: " + ", ".join(ALLOWED_LABELS) + ". No other text."
+        result2 = run_single_turn_blocking(name="DocClassifierRetry", instructions=retry_instructions, message=prompt, model=model)
+        label2 = (result2 or "").strip().strip("`\"'")
+        
+        if label2 in ALLOWED_LABELS:
+            return label2
+        normalized2 = label2.lower()
+        if normalized2 in ALLOWED_LABELS:
+            return normalized2
+        
         return None
     except Exception:
         return None
@@ -92,7 +106,9 @@ def classify_documents_batch(documents: list[dict], model_override: Optional[str
         "Guidelines: personal_statement is the applicant's essay about motivation; reference_letter is a recommender's letter; "
         "cv_resume is the candidate's resume; transcript lists courses and grades; diploma_certificate certifies a degree; "
         "language_test is IELTS/TOEFL or similar; certificate_award are honors/awards; internship_proof verifies internships/work; "
-        "general_overview includes brochures or programme overviews; otherwise choose other. "
+        "general_overview includes brochures or programme overviews; otherwise choose other. \n\n"
+        "MANDATORY OUTPUT FORMAT: Return ONLY valid JSON with no additional text, explanations, or formatting.\n"
+        "Do not use markdown code fences or backticks. Start with { and end with }.\n"
         "Return your response as JSON in the format: {\"doc_1\": \"label\", \"doc_2\": \"label\", ...} "
         "Use only lowercase labels with no extra words."
     )
@@ -109,24 +125,48 @@ def classify_documents_batch(documents: list[dict], model_override: Optional[str
     
     prompt = "\n".join(prompt_parts)
     
+    def _clean_json_response(response: str) -> str:
+        """Clean and extract JSON from batch classifier response."""
+        import re
+        
+        # Remove markdown code fences
+        cleaned = re.sub(r"^```(?:json)?\s*", "", response.strip(), flags=re.MULTILINE)
+        cleaned = re.sub(r"\s*```$", "", cleaned.strip(), flags=re.MULTILINE)
+        
+        # Find JSON object boundaries
+        cleaned = cleaned.strip()
+        if not cleaned.startswith("{"):
+            start = cleaned.find("{")
+            if start == -1:
+                return "{}"
+            cleaned = cleaned[start:]
+        
+        if not cleaned.endswith("}"):
+            end = cleaned.rfind("}")
+            if end == -1:
+                return "{}"
+            cleaned = cleaned[:end + 1]
+        
+        return cleaned
+    
     try:
         model = model_override or get_model_for_agent("batch_classifier")
         result = run_single_turn_blocking(name="BatchDocClassifier", instructions=instructions, message=prompt, model=model)
         
         # Parse JSON response
         import json
-        result_clean = (result or "").strip()
+        result_clean = _clean_json_response(result or "")
         
-        # Try to extract JSON from response
-        if result_clean.startswith("{") and result_clean.endswith("}"):
+        try:
             classifications = json.loads(result_clean)
-        else:
-            # Try to find JSON in response
-            import re
-            json_match = re.search(r'\{[^}]+\}', result_clean)
-            if json_match:
-                classifications = json.loads(json_match.group())
-            else:
+        except json.JSONDecodeError:
+            # Retry with more explicit instructions
+            retry_instructions = instructions + "\n\nCRITICAL RETRY: Previous response failed JSON parsing. Return ONLY valid JSON object starting with { and ending with }. No additional text."
+            result2 = run_single_turn_blocking(name="BatchDocClassifierRetry", instructions=retry_instructions, message=prompt, model=model)
+            result_clean2 = _clean_json_response(result2 or "")
+            try:
+                classifications = json.loads(result_clean2)
+            except Exception:
                 return {}
         
         # Map back to doc_ids and validate labels

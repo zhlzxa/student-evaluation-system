@@ -92,6 +92,8 @@ async def english_agent(applicant_id: int, run_id: int, level_hint: str | None =
         "- For test scores: include score details and policy evaluation\n"
         "- All analysis must go in evidence array, not as markdown text\n"
         "\n"
+        "MANDATORY OUTPUT FORMAT: Return ONLY valid JSON with no additional text, explanations, or formatting.\n"
+        "Do not use markdown code fences or backticks. Start with { and end with }.\n"
         "Return JSON: {exemption:boolean, test_type:string|null, test_overall:number|null, level:string|null, score:number|null, evidence:string[]}\n"
         "CRITICAL: Use exemption plugin for standardized country checking. Don't guess or use semantic understanding for countries.\n"
         "FALLBACK: If the automated exemption check seems incorrect, you can call get_nationality_exempt_countries() and get_degree_exempt_countries() to get the full exemption lists for manual verification.\n"
@@ -105,6 +107,7 @@ async def english_agent(applicant_id: int, run_id: int, level_hint: str | None =
         "CRITICAL: If exemption=true, MUST call score_exemption() and set score=10. Include exemption reasoning in evidence.\n"
         "CRITICAL: All reasoning and analysis must be included in the evidence array, not as markdown text."
     )
+    # First attempt
     ans = await _ask_agent(
         "EnglishAgent",
         instructions,
@@ -116,6 +119,22 @@ async def english_agent(applicant_id: int, run_id: int, level_hint: str | None =
         applicant_id=applicant_id,
     )
     result = parse_agent_json(ans)
+    
+    # Retry if parsing failed
+    if result is None:
+        retry_instructions = instructions + "\n\nCRITICAL RETRY: Previous response failed JSON parsing. Return ONLY valid JSON object starting with { and ending with }. No additional text."
+        ans2 = await _ask_agent(
+            "EnglishAgentRetry",
+            retry_instructions,
+            prompt,
+            plugins=[EnglishScorePlugin(), EnglishExemptionPlugin(), DocStorePlugin(applicant_id, run_id)],
+            agent_type="english",
+            model_override=model_override,
+            run_id=run_id,
+            applicant_id=applicant_id,
+        )
+        result = parse_agent_json(ans2)
+    
     if result is None:
         return {"exemption": False, "test_type": None, "test_overall": None, "level": level_hint, "score": None, "evidence": []}
     return result
@@ -269,13 +288,14 @@ async def ps_rl_agent(applicant_id: int, run_id: int, checklist: list[str] | Non
         "Evaluate personal statement motivation and detail; verify alignment to checklist using document access tools. "
         "First call list_documents() then prioritize: Personal Statement, Reference Letters, Motivation Letter. "
         "For reference letters, validate recommender standing with Bing. "
-        "Use minimal tokens - focus on PS and reference letter documents specifically. "
-        "\n"
-        "MANDATORY: Return ONLY valid JSON format, no markdown or additional text. "
+        "Use minimal tokens - focus on PS and reference letter documents specifically. \n\n"
+        "MANDATORY OUTPUT FORMAT: Return ONLY valid JSON with no additional text, explanations, or formatting.\n"
+        "Do not use markdown code fences or backticks. Start with { and end with }.\n"
         "Each strength and weakness MUST have corresponding evidence. Structure as: "
         "{\"score\": <number 0-10>, \"strengths\": [{\"point\": \"strength description\", \"evidence\": \"specific evidence from documents\"}], \"weaknesses\": [{\"point\": \"weakness description\", \"evidence\": \"specific evidence from documents\"}]}"
     )
     prompt = f"Checklist: {checklist or []}\nUse document access functions to find personal statement and reference letter content."
+    # First attempt
     ans = await _ask_agent(
         "PsRlAgent",
         instructions,
@@ -288,6 +308,23 @@ async def ps_rl_agent(applicant_id: int, run_id: int, checklist: list[str] | Non
         applicant_id=applicant_id,
     )
     result = parse_agent_json(ans)
+    
+    # Retry if parsing failed
+    if result is None:
+        retry_instructions = instructions + "\n\nCRITICAL RETRY: Previous response failed JSON parsing. Return ONLY valid JSON object starting with { and ending with }. No additional text."
+        ans2 = await _ask_agent(
+            "PsRlAgentRetry",
+            retry_instructions,
+            prompt,
+            with_bing=False,
+            plugins=[DocStorePlugin(applicant_id, run_id)],
+            agent_type="ps_rl",
+            model_override=model_override,
+            run_id=run_id,
+            applicant_id=applicant_id,
+        )
+        result = parse_agent_json(ans2)
+    
     if result is None:
         return {"score": None, "strengths": [], "weaknesses": []}
     return result
@@ -300,15 +337,21 @@ async def academic_agent(applicant_id: int, run_id: int, checklist: Optional[lis
         checklist_text = f"\n\nSpecific academic requirements to evaluate:\n" + "\n".join(f"- {req}" for req in checklist)
     
     instructions = (
-        "Evaluate publications using document access tools: verify authenticity via Bing, venue tier (conference/journal), and coauthorship with faculty. "
+        "Evaluate publications and academic achievements using document access tools: verify authenticity via Bing, venue tier (conference/journal), and coauthorship with faculty. "
         "First call list_documents() then prioritize: CV, Publications List, Research Statement, Portfolio. "
-        "Use search_documents() to find 'publication', 'paper', 'conference', 'journal'. "
-        "Score: top-tier 10; general conference 5; only unpublished 0. "
-        "Use minimal tokens - focus on academic documents and publications. "
-        "Return JSON: score (0-10), papers (array of {title, venue, tier}), evidence (array)."
+        "Use search_documents() to find 'publication', 'paper', 'conference', 'journal', 'research', 'thesis'. "
+        "Scoring guidelines: top-tier venue publications=10; general conference/journal=5-7; undergraduate thesis=3-4; no academic work=0. "
+        "Use minimal tokens - focus on academic documents and publications. \n\n"
+        "CRITICAL: You MUST return valid JSON regardless of what you find or don't find.\n"
+        "MANDATORY OUTPUT FORMAT: Return ONLY valid JSON with no additional text, explanations, or formatting.\n"
+        "Do not use markdown code fences or backticks. Start with { and end with }.\n"
+        "IMPORTANT: Even if no publications are found, return JSON with score=0, papers=[], evidence=[\"No academic publications found in documents\"]\n"
+        "Required JSON format: {\"score\": number(0-10), \"papers\": [{\"title\": \"string\", \"venue\": \"string\", \"tier\": \"string\"}], \"evidence\": [\"string\"]}\n"
+        "Do NOT include conversational text like 'If there are other aspects...' or 'Let me know!'"
         f"{checklist_text}"
     )
     prompt = "Use document access functions to find academic publications and research work."
+    # First attempt
     ans = await _ask_agent(
         "AcademicAgent",
         instructions,
@@ -321,6 +364,23 @@ async def academic_agent(applicant_id: int, run_id: int, checklist: Optional[lis
         applicant_id=applicant_id,
     )
     result = parse_agent_json(ans)
+    
+    # Retry if parsing failed
+    if result is None:
+        retry_instructions = instructions + "\n\nCRITICAL RETRY: Previous response failed JSON parsing. Return ONLY valid JSON object starting with { and ending with }. No additional text."
+        ans2 = await _ask_agent(
+            "AcademicAgentRetry",
+            retry_instructions,
+            prompt,
+            with_bing=True,
+            plugins=[DocStorePlugin(applicant_id, run_id)],
+            agent_type="academic",
+            model_override=model_override,
+            run_id=run_id,
+            applicant_id=applicant_id,
+        )
+        result = parse_agent_json(ans2)
+    
     if result is None:
         return {"score": None, "papers": [], "evidence": []}
     return result
@@ -333,11 +393,14 @@ async def compare_agent(app_a: dict[str, Any], app_b: dict[str, Any], model_over
     """
     instructions = (
         "You compare two applicants using structured scores and evidence from multiple agents (english, degree, academic, experience, ps_rl). "
-        "Choose which applicant is better overall for UCL admissions based on the provided weights (english 10%, degree 50%, academic 15%, experience 15%, ps_rl 10%). "
+        "Choose which applicant is better overall for UCL admissions based on the provided weights (english 10%, degree 50%, academic 15%, experience 15%, ps_rl 10%). \n\n"
+        "MANDATORY OUTPUT FORMAT: Return ONLY valid JSON with no additional text, explanations, or formatting.\n"
+        "Do not use markdown code fences or backticks. Start with { and end with }.\n"
         "Return strict JSON: {winner: 'A'|'B'|'tie', reason: string}."
     )
     import json
     content = json.dumps({"A": app_a, "B": app_b})
+    # First attempt
     ans = await _ask_agent(
         "PairwiseAgent",
         instructions,
@@ -347,6 +410,20 @@ async def compare_agent(app_a: dict[str, Any], app_b: dict[str, Any], model_over
         model_override=model_override,
     )
     result = parse_agent_json(ans)
+    
+    # Retry if parsing failed or invalid winner
+    if result is None or result.get("winner") not in {"A", "B", "tie"}:
+        retry_instructions = instructions + "\n\nCRITICAL RETRY: Previous response failed. Return ONLY valid JSON object starting with { and ending with }. Winner must be 'A', 'B', or 'tie'."
+        ans2 = await _ask_agent(
+            "PairwiseAgentRetry",
+            retry_instructions,
+            content,
+            with_bing=True,
+            agent_type="compare",
+            model_override=model_override,
+        )
+        result = parse_agent_json(ans2)
+    
     if result is not None and result.get("winner") in {"A", "B", "tie"}:
         return result
     return {"winner": "tie", "reason": "undecided"}

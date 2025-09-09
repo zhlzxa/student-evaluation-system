@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from pathlib import Path
@@ -37,8 +38,7 @@ def create_run(
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)]
 ):
-    if not data.rule_set_id and not data.rule_set_url:
-        raise HTTPException(status_code=400, detail="Either rule_set_id or rule_set_url must be provided")
+    # Allow creating an empty run (rule_set can be bound later)
     if data.rule_set_id:
         rs = db.get(AdmissionRuleSet, data.rule_set_id)
         if not rs:
@@ -222,11 +222,59 @@ async def upload_zip(run_id: int, file: UploadFile = File(...), db: Session = De
     return run
 
 
+class RunRuleSetUpdate(BaseModel):
+    rule_set_id: int | None = None
+    rule_set_url: str | None = None
+    custom_requirements: list[str] | None = None
+
+
+@router.put("/runs/{run_id}/rule-set", response_model=AssessmentRunRead)
+async def update_run_rule_set(
+    run_id: int,
+    payload: RunRuleSetUpdate,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_active_user)]
+):
+    run = db.get(AssessmentRun, run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if not payload.rule_set_id and not payload.rule_set_url:
+        raise HTTPException(status_code=400, detail="Either rule_set_id or rule_set_url must be provided")
+
+    if payload.rule_set_id:
+        rs = db.get(AdmissionRuleSet, payload.rule_set_id)
+        if not rs:
+            raise HTTPException(status_code=404, detail="Rule set not found")
+        run.rule_set_id = rs.id
+        run.rule_set_url = None
+    else:
+        # Import from URL, then bind to run
+        rule_set, _ = await RuleImportService.import_rules_from_url(
+            db=db,
+            url=payload.rule_set_url,  # type: ignore[arg-type]
+            custom_requirements=payload.custom_requirements,
+            temporary=True,
+            model_override=None,
+        )
+        run.rule_set_id = rule_set.id
+        run.rule_set_url = payload.rule_set_url
+
+    if payload.custom_requirements is not None:
+        run.custom_requirements = payload.custom_requirements
+
+    db.add(run)
+    db.commit()
+    db.refresh(run)
+    return run
+
+
 @router.post("/runs/{run_id}/start", response_model=AssessmentRunRead)
 def start_run(run_id: int, db: Session = Depends(get_db)):
     run = db.get(AssessmentRun, run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
+    if not run.rule_set_id:
+        raise HTTPException(status_code=400, detail="Rule set not set for this run")
     # For now, set to processing and rely on Celery pipeline stub
     run.status = "processing"
     db.add(run)

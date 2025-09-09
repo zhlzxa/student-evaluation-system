@@ -31,6 +31,7 @@ export default function EvaluationHistoryPage() {
   const router = useRouter();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [evaluationToDelete, setEvaluationToDelete] = useState<any>(null);
+  const [creating, setCreating] = useState(false);
   
   const { data, refetch } = useQuery({
     queryKey: ['runs-list'],
@@ -119,7 +120,19 @@ export default function EvaluationHistoryPage() {
             <Button
               variant="contained"
               startIcon={<Add />}
-              onClick={() => router.push('/assessments/new')}
+              onClick={async () => {
+                if (creating) return;
+                try {
+                  setCreating(true);
+                  const resp = await api('/assessments/runs', { method: 'POST', body: JSON.stringify({}) });
+                  if (!resp.ok) return;
+                  const created = await resp.json();
+                  router.push(`/assessments/new?runId=${created.id}`);
+                } finally {
+                  setCreating(false);
+                }
+              }}
+              disabled={creating}
               sx={{
                 backgroundColor: 'primary.main',
                 color: 'primary.contrastText',
@@ -135,7 +148,7 @@ export default function EvaluationHistoryPage() {
                 }
               }}
             >
-              Create
+              {creating ? 'Creating…' : 'Create'}
             </Button>
           </Box>
           <TableContainer component={Paper} elevation={2}>
