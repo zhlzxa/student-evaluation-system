@@ -74,7 +74,7 @@ export default function EvaluationHistoryPage() {
   const getStatusIcon = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'completed': return <CheckCircle color="success" />;
-      case 'running': case 'in_progress': return <HourglassEmpty color="info" />;
+      case 'running': case 'in_progress': case 'processing': return <HourglassEmpty color="info" />;
       case 'failed': case 'error': return <Cancel color="error" />;
       default: return <Schedule color="action" />;
     }
@@ -83,7 +83,7 @@ export default function EvaluationHistoryPage() {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'completed': return 'success';
-      case 'running': case 'in_progress': return 'info';
+      case 'running': case 'in_progress': case 'processing': return 'info';
       case 'failed': case 'error': return 'error';
       default: return 'default';
     }
@@ -194,7 +194,8 @@ export default function EvaluationHistoryPage() {
                           <IconButton
                             color="primary"
                             onClick={() => router.push(`/assessments/runs/${evaluation.id}`)}
-                            title="View Details"
+                            title={evaluation.status?.toLowerCase() === 'completed' ? 'View Details' : 'Available after completion'}
+                            disabled={evaluation.status?.toLowerCase() !== 'completed'}
                           >
                             <Visibility />
                           </IconButton>
