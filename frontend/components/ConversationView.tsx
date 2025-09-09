@@ -14,6 +14,7 @@ import {
   CardContent
 } from '@mui/material';
 import { ExpandMore, SmartToy, Person, Build } from '@mui/icons-material';
+import { formatLocalTime } from '../lib/date';
 
 interface LogMessage {
   id: number;
@@ -95,7 +96,7 @@ function MessageBubble({ message, isAgent = false }: { message: LogMessage; isAg
             sx={{ height: 20, fontSize: '0.7rem' }}
           />
           <Typography variant="caption" color="text.secondary">
-            {new Date(message.created_at).toLocaleTimeString()}
+            {formatLocalTime(message.created_at)}
           </Typography>
         </Stack>
         <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>

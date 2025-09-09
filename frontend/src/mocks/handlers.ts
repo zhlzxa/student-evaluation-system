@@ -140,19 +140,7 @@ export const handlers = [
     return HttpResponse.json(newRule, { status: 201 })
   }),
 
-  // Reports endpoints
-  http.get('/reports/:id', ({ params }) => {
-    const { id } = params
-    const report = {
-      id: Number(id),
-      title: `Report ${id}`,
-      content: 'This is a sample report content',
-      generated_at: new Date().toISOString(),
-      assessment_run_id: 1,
-    }
-    
-    return HttpResponse.json(report)
-  }),
+  // Reports endpoints removed
 
   // Authentication endpoints (mock)
   http.post('/auth/login', async ({ request }) => {

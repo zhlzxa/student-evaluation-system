@@ -21,9 +21,13 @@ import {
   TableHead,
   TableRow,
   Paper,
-  IconButton
+  IconButton,
+  TableSortLabel,
+  Menu,
+  MenuItem
 } from '@mui/material';
-import { Assessment, Visibility, Schedule, CheckCircle, HourglassEmpty, Cancel, Delete, Add } from '@mui/icons-material';
+import { Assessment, Visibility, Schedule, CheckCircle, HourglassEmpty, Cancel, Delete, Add, MoreVert } from '@mui/icons-material';
+import { formatLocalDateTime } from '../../lib/date';
 import { useRouter } from 'next/navigation';
 
 export default function EvaluationHistoryPage() {
@@ -32,6 +36,10 @@ export default function EvaluationHistoryPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [evaluationToDelete, setEvaluationToDelete] = useState<any>(null);
   const [creating, setCreating] = useState(false);
+  const [orderBy, setOrderBy] = useState<'status' | 'started' | null>('started');
+  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusMenuAnchor, setStatusMenuAnchor] = useState<null | HTMLElement>(null);
   
   const { data, refetch } = useQuery({
     queryKey: ['runs-list'],
@@ -88,6 +96,54 @@ export default function EvaluationHistoryPage() {
       default: return 'default';
     }
   };
+
+  const handleRequestSort = (key: 'status' | 'started') => {
+    if (orderBy === key) {
+      setOrder(order === 'asc' ? 'desc' : 'asc');
+    } else {
+      setOrderBy(key);
+      setOrder('asc');
+    }
+  };
+
+  const normalizeStatus = (s: string) => (s || '').toLowerCase();
+  // Map各种后端状态到规范集合，确保筛选菜单稳定
+  const canonicalizeStatus = (s: string): 'pending' | 'processing' | 'completed' | 'failed' => {
+    const v = normalizeStatus(s);
+    if (v === 'completed') return 'completed';
+    if (v === 'failed' || v === 'error') return 'failed';
+    if (v === 'running' || v === 'in_progress' || v === 'processing') return 'processing';
+    return 'pending';
+  };
+  const CANONICAL_STATUS_ORDER: Array<'processing'|'completed'|'failed'> = ['processing','completed','failed'];
+  const displayStatus = (c: string) => c; // keep backend naming
+
+  // 统计各规范状态数量（用于后续可扩展显示计数或禁用）
+  const statusCounts = (Array.isArray(data) ? data : []).reduce((acc: Record<string, number>, e: any) => {
+    const c = canonicalizeStatus(e.status || '');
+    acc[c] = (acc[c] || 0) + 1;
+    return acc;
+  }, {});
+
+  const filteredAndSorted = (Array.isArray(data) ? data : [])
+    .filter((evaluation: any) => {
+      const status = canonicalizeStatus(evaluation.status);
+      if (statusFilter !== 'all' && status !== statusFilter) return false;
+      return true;
+    })
+    .sort((a: any, b: any) => {
+      if (!orderBy) return 0;
+      const dir = order === 'asc' ? 1 : -1;
+      if (orderBy === 'status') {
+        const av = canonicalizeStatus(a.status);
+        const bv = canonicalizeStatus(b.status);
+        return av.localeCompare(bv) * dir;
+      } else {
+        const av = new Date(a.created_at).getTime();
+        const bv = new Date(b.created_at).getTime();
+        return (av - bv) * dir;
+      }
+    });
 
   return (
     <Box
@@ -156,13 +212,32 @@ export default function EvaluationHistoryPage() {
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 'bold' }}>Evaluation</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Started</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', position: 'relative', pr: 6, '&:hover .status-menu-btn': { opacity: 1, pointerEvents: 'auto' } }}>
+                      <TableSortLabel
+                        active={orderBy === 'status'}
+                        direction={orderBy === 'status' ? order : 'asc'}
+                        onClick={() => handleRequestSort('status')}
+                      >
+                        Status
+                      </TableSortLabel>
+                      <IconButton size="small" className="status-menu-btn" onClick={(e) => setStatusMenuAnchor(e.currentTarget)} sx={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', opacity: 0, pointerEvents: 'none', transition: 'opacity 0.2s' }}>
+                        <MoreVert fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>
+                      <TableSortLabel
+                        active={orderBy === 'started'}
+                        direction={orderBy === 'started' ? order : 'asc'}
+                        onClick={() => handleRequestSort('started')}
+                      >
+                        Started
+                      </TableSortLabel>
+                    </TableCell>
                     <TableCell align="center" sx={{ fontWeight: 'bold' }}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {(Array.isArray(data) ? data : []).map((evaluation: any) => (
+                  {filteredAndSorted.map((evaluation: any) => (
                     <TableRow 
                       key={evaluation.id}
                       sx={{ '&:hover': { backgroundColor: 'action.hover' } }}
@@ -186,7 +261,7 @@ export default function EvaluationHistoryPage() {
                       </TableCell>
                       <TableCell sx={{ py: 2 }}>
                         <Typography variant="body2" color="text.secondary">
-                          {new Date(evaluation.created_at).toLocaleString()}
+                          {formatLocalDateTime(evaluation.created_at)}
                         </Typography>
                       </TableCell>
                       <TableCell align="center" sx={{ py: 2 }}>
@@ -213,6 +288,23 @@ export default function EvaluationHistoryPage() {
                 </TableBody>
               </Table>
             </TableContainer>
+
+          <Menu
+            anchorEl={statusMenuAnchor}
+            open={Boolean(statusMenuAnchor)}
+            onClose={() => setStatusMenuAnchor(null)}
+          >
+            <MenuItem selected={statusFilter === 'all'} onClick={() => { setStatusFilter('all'); setStatusMenuAnchor(null); }}>All</MenuItem>
+            {CANONICAL_STATUS_ORDER.map((s) => (
+              <MenuItem 
+                key={s} 
+                selected={statusFilter === s} 
+                onClick={() => { setStatusFilter(s); setStatusMenuAnchor(null); }}
+              >
+                {displayStatus(s)}
+              </MenuItem>
+            ))}
+          </Menu>
           
           {(!data || data.length === 0) && (
             <Card elevation={1} sx={{ p: 4, textAlign: 'center' }}>

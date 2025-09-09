@@ -1,5 +1,6 @@
 "use client";
 
+import React from 'react';
 import { 
   Box, 
   Paper, 
@@ -10,16 +11,26 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  TableContainer,
+  TableSortLabel,
   Stack,
-  Divider,
   Card,
-  CardContent
+  CardContent,
+  IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+  Menu
 } from '@mui/material';
-import { CheckCircle, Cancel, Compare, EmojiEvents, Gavel } from '@mui/icons-material';
+import { CheckCircle, Cancel, Compare, EmojiEvents, Gavel, Visibility, MoreVert } from '@mui/icons-material';
+import { useRouter } from 'next/navigation';
 
 interface EvaluationData {
   items: Array<{
     applicant_id: number;
+    display_name?: string | null;
     folder: string;
     gating?: {
       decision: string;
@@ -28,6 +39,7 @@ interface EvaluationData {
     ranking?: {
       weighted_score: number;
       final_rank: number;
+      notes?: string;
     };
   }>;
   pairwise: Array<{
@@ -39,10 +51,17 @@ interface EvaluationData {
   }>;
 }
 
-export default function EvaluationProcess({ data }: { data: EvaluationData }) {
+export default function EvaluationProcess({ data, runId }: { data: EvaluationData; runId: number }) {
   if (!data) return null;
 
   const { items = [], pairwise = [] } = data;
+  const router = useRouter();
+  const [orderBy, setOrderBy] = React.useState<'score' | 'decision' | null>(null);
+  const [order, setOrder] = React.useState<'asc' | 'desc'>('asc');
+  const [decisionFilter, setDecisionFilter] = React.useState<'all' | 'accept' | 'middle' | 'reject'>('all');
+  const [decisionMenuAnchor, setDecisionMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [scoreFrom, setScoreFrom] = React.useState<string>('');
+  const [scoreTo, setScoreTo] = React.useState<string>('');
 
   const getGatingColor = (decision: string) => {
     switch (decision?.toLowerCase()) {
@@ -61,112 +80,197 @@ export default function EvaluationProcess({ data }: { data: EvaluationData }) {
     }
   };
 
+  const decisionKey = (d: string) => {
+    const s = (d || '').toLowerCase();
+    if (s === 'pass' || s === 'accept') return 'accept';
+    if (s === 'fail' || s === 'reject') return 'reject';
+    if (s === 'middle') return 'middle';
+    return s;
+  };
+
+  const handleRequestSort = (key: 'score' | 'decision') => {
+    if (orderBy === key) setOrder(order === 'asc' ? 'desc' : 'asc'); else { setOrderBy(key); setOrder('asc'); }
+  };
+
+  const filteredAndSorted = items
+    .filter((item) => {
+      const d = decisionKey(item.gating?.decision || '');
+      if (decisionFilter !== 'all' && d !== decisionFilter) return false;
+      const s = item.ranking?.weighted_score ?? null;
+      if (scoreFrom !== '' && s !== null && s < Number(scoreFrom)) return false;
+      if (scoreTo !== '' && s !== null && s > Number(scoreTo)) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if (!orderBy) return 0;
+      const dir = order === 'asc' ? 1 : -1;
+      if (orderBy === 'score') {
+        const av = a.ranking?.weighted_score ?? -Infinity;
+        const bv = b.ranking?.weighted_score ?? -Infinity;
+        return (av - bv) * dir;
+      }
+      const av = decisionKey(a.gating?.decision || '');
+      const bv = decisionKey(b.gating?.decision || '');
+      return av.localeCompare(bv) * dir;
+    });
+
   return (
     <Stack spacing={3}>
-      {/* Gating Results */}
+      {/* Combined Results Table: Rank, Applicant, Weighted Score, Notes, AI Decision, Actions */}
       <Card elevation={2}>
         <CardContent>
           <Stack direction="row" alignItems="center" spacing={1} mb={2}>
             <Gavel color="primary" />
             <Typography variant="h6">
-              Step 1: Gating Results
+              Evaluation Results
             </Typography>
           </Stack>
           <Typography variant="body2" color="text.secondary" mb={2}>
-            Initial screening to filter candidates who meet minimum requirements
+            Hint: ACCEPT and REJECT candidates are excluded from scoring and ranking. MIDDLE candidates' ranks may be adjusted based on pairwise comparison results.
           </Typography>
-          
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Applicant</TableCell>
-                <TableCell>Decision</TableCell>
-                <TableCell>Reasons</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.applicant_id}>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight="medium">
-                      {item.folder}
-                    </Typography>
+
+          {/* Filters */}
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }} />
+
+          <TableContainer component={Paper} elevation={2}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Rank</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Applicant</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    <TableSortLabel
+                      active={orderBy === 'score'}
+                      direction={orderBy === 'score' ? order : 'asc'}
+                      onClick={() => handleRequestSort('score')}
+                    >
+                      Weighted Score
+                    </TableSortLabel>
                   </TableCell>
-                  <TableCell>
-                    <Chip
-                      icon={getGatingIcon(item.gating?.decision || '')}
-                      label={item.gating?.decision || 'Pending'}
-                      color={getGatingColor(item.gating?.decision || '')}
-                      size="small"
-                      variant="outlined"
-                    />
+                  <TableCell sx={{ fontWeight: 'bold' }}>Notes</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', position: 'relative', pr: 6, '&:hover .decision-menu-btn': { opacity: 1, pointerEvents: 'auto' } }}>
+                    <TableSortLabel
+                      active={orderBy === 'decision'}
+                      direction={orderBy === 'decision' ? order : 'asc'}
+                      onClick={() => handleRequestSort('decision')}
+                    >
+                      AI Decision
+                    </TableSortLabel>
+                    <IconButton size="small" className="decision-menu-btn" onClick={(e) => setDecisionMenuAnchor(e.currentTarget)} sx={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', opacity: 0, pointerEvents: 'none', transition: 'opacity 0.2s' }}>
+                      <MoreVert fontSize="small" />
+                    </IconButton>
                   </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {item.gating?.reasons?.join('; ') || 'No reasons provided'}
-                    </Typography>
-                  </TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 'bold' }}>Actions</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </TableHead>
+              <TableBody>
+              {filteredAndSorted
+                .sort((a, b) => {
+                  const aDecision = a.gating?.decision?.toLowerCase();
+                  const bDecision = b.gating?.decision?.toLowerCase();
 
-      {/* Ranking Results */}
-      <Card elevation={2}>
-        <CardContent>
-          <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-            <EmojiEvents color="primary" />
-            <Typography variant="h6">
-              Step 2: Weighted Ranking
-            </Typography>
-          </Stack>
-          <Typography variant="body2" color="text.secondary" mb={2}>
-            Candidates ranked by weighted evaluation scores
-          </Typography>
+                  const aIsAccept = aDecision === 'accept' || aDecision === 'pass';
+                  const bIsAccept = bDecision === 'accept' || bDecision === 'pass';
+                  if (aIsAccept && !bIsAccept) return -1;
+                  if (!aIsAccept && bIsAccept) return 1;
 
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Rank</TableCell>
-                <TableCell>Applicant</TableCell>
-                <TableCell>Weighted Score</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {items
-                .filter(item => item.ranking)
-                .sort((a, b) => (a.ranking?.final_rank || 999) - (b.ranking?.final_rank || 999))
+                  const aIsReject = aDecision === 'reject';
+                  const bIsReject = bDecision === 'reject';
+                  if (aIsReject && !bIsReject) return 1;
+                  if (!aIsReject && bIsReject) return -1;
+
+                  const aIsMiddle = aDecision === 'middle';
+                  const bIsMiddle = bDecision === 'middle';
+                  if (aIsMiddle && bIsMiddle && a.ranking && b.ranking) {
+                    return (a.ranking?.final_rank || 999) - (b.ranking?.final_rank || 999);
+                  }
+
+                  return 0;
+                })
                 .map((item) => {
-                  const finalRank = item.ranking?.final_rank ?? 999;
+                  const finalRank = item.ranking?.final_rank ?? null;
                   const weightedScore = item.ranking?.weighted_score;
+                  const notes = item.ranking?.notes;
+                  const decisionRaw = item.gating?.decision || '';
+                  const decision = decisionRaw.toLowerCase();
+                  const isReject = decision === 'reject';
+                  const isAccept = decision === 'accept' || decision === 'pass';
+
                   return (
-                  <TableRow key={item.applicant_id}>
-                    <TableCell>
-                      <Chip
-                        label={`#${finalRank}`}
-                        color={finalRank <= 3 ? 'primary' : 'default'}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="medium">
-                        {item.folder}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {weightedScore?.toFixed(2) || 'N/A'}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
+                    <TableRow key={item.applicant_id} sx={{ '&:hover': { backgroundColor: 'action.hover' } }}>
+                      <TableCell sx={{ py: 2 }}>
+                        {isAccept ? (
+                          <Chip label="—" color="success" size="small" variant="outlined" />
+                        ) : isReject ? (
+                          <Chip label="—" color="error" size="small" variant="outlined" />
+                        ) : (
+                          <Chip
+                            label={finalRank ? `#${finalRank}` : '—'}
+                            color={finalRank && finalRank <= 3 ? 'primary' : 'default'}
+                            size="small"
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell sx={{ py: 2 }}>
+                        <Typography variant="body2" fontWeight="medium">
+                          {item.display_name || item.folder}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ py: 2 }}>
+                        <Typography variant="body2">
+                          {isAccept || isReject ? '—' : (weightedScore?.toFixed(2) || '—')}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ py: 2 }}>
+                        {isAccept || isReject ? (
+                          <Typography variant="body2" color="text.secondary">—</Typography>
+                        ) : notes ? (
+                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', maxWidth: 250, wordBreak: 'break-word' }}>
+                            {notes}
+                          </Typography>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                            No adjustments
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell sx={{ py: 2 }}>
+                        <Chip
+                          icon={getGatingIcon(decisionRaw)}
+                          label={decisionRaw || 'Pending'}
+                          color={getGatingColor(decisionRaw)}
+                          size="small"
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell align="center" sx={{ py: 2 }}>
+                        <IconButton 
+                          color="primary" 
+                          onClick={() => router.push(`/assessments/runs/${runId}/applicants/${item.applicant_id}`)}
+                          title="View"
+                        >
+                          <Visibility />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-            </TableBody>
-          </Table>
+              </TableBody>
+            </Table>
+          </TableContainer>
         </CardContent>
       </Card>
+
+      <Menu
+        anchorEl={decisionMenuAnchor}
+        open={Boolean(decisionMenuAnchor)}
+        onClose={() => setDecisionMenuAnchor(null)}
+      >
+        <MenuItem selected={decisionFilter === 'all'} onClick={() => { setDecisionFilter('all'); setDecisionMenuAnchor(null); }}>All</MenuItem>
+        <MenuItem selected={decisionFilter === 'accept'} onClick={() => { setDecisionFilter('accept'); setDecisionMenuAnchor(null); }}>Accept</MenuItem>
+        <MenuItem selected={decisionFilter === 'middle'} onClick={() => { setDecisionFilter('middle'); setDecisionMenuAnchor(null); }}>Middle</MenuItem>
+        <MenuItem selected={decisionFilter === 'reject'} onClick={() => { setDecisionFilter('reject'); setDecisionMenuAnchor(null); }}>Reject</MenuItem>
+      </Menu>
 
       {/* Pairwise Comparisons */}
       {pairwise.length > 0 && (
@@ -175,7 +279,7 @@ export default function EvaluationProcess({ data }: { data: EvaluationData }) {
             <Stack direction="row" alignItems="center" spacing={1} mb={2}>
               <Compare color="primary" />
               <Typography variant="h6">
-                Step 3: Pairwise Comparisons
+                Pairwise Comparisons
               </Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary" mb={2}>

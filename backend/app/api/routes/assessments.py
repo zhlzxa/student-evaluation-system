@@ -23,6 +23,7 @@ from app.agents.model_config import get_supported_models, get_agent_types
 from app.services.storage import save_zip, extract_zip, iter_applicant_folders, guess_content_type, read_text_preview
 import logging
 from app.models.run_log import RunLog
+import re
 
 
 router = APIRouter(prefix="/assessments", tags=["assessments"])
@@ -212,7 +213,29 @@ async def upload_zip(run_id: int, file: UploadFile = File(...), db: Session = De
 
     # Build applicants and documents based on top-level folders
     for folder in iter_applicant_folders(extract_root):
-        applicant = Applicant(run_id=run.id, folder_name=folder.name)
+        # Try to parse display name and email from folder name patterns like
+        # "First_Last_email@example.com" or "First Last (email@example.com)".
+        display_name: str | None = None
+        email: str | None = None
+        # Pattern 1: name_email@example.com (underscores allowed in name)
+        m1 = re.match(r"^([A-Za-z]+[A-Za-z_\- ]*[A-Za-z])[_-]+([A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+)$", folder.name)
+        if m1:
+            display_name = m1.group(1).replace('_', ' ').strip()
+            email = m1.group(2)
+        # Pattern 2: Name (email@example.com)
+        if not email:
+            m2 = re.match(r"^(.+?)\s*\(([^\)]+@[^\)]+)\)$", folder.name)
+            if m2:
+                display_name = m2.group(1).strip()
+                email = m2.group(2).strip()
+        # Fallback: try to split by last underscore
+        if not email and '_' in folder.name:
+            parts = folder.name.rsplit('_', 1)
+            if len(parts) == 2 and '@' in parts[1]:
+                display_name = parts[0].replace('_', ' ').strip()
+                email = parts[1]
+
+        applicant = Applicant(run_id=run.id, folder_name=folder.name, display_name=display_name, email=email)
         db.add(applicant)
         db.flush()
         for p in folder.rglob("*"):

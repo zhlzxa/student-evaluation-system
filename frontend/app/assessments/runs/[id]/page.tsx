@@ -2,9 +2,10 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useApi } from '../../../../lib/api';
 import { useEffect, useState } from 'react';
-import { Alert, Box, Button, Chip, Paper, Stack, Typography, Container, Tabs, Tab } from '@mui/material';
-import ConversationView from '../../../../components/ConversationView';
+import { Alert, Box, Button, Stack, Typography, Container, Skeleton } from '@mui/material';
+import { ArrowBack } from '@mui/icons-material';
 import EvaluationProcess from '../../../../components/EvaluationProcess';
+import StatCard from '../../../../components/ui/StatCard';
 
 export default function RunDetailPage() {
   const params = useParams<{ id: string }>();
@@ -12,66 +13,66 @@ export default function RunDetailPage() {
   const api = useApi();
   const router = useRouter();
   const [run, setRun] = useState<any>(null);
-  const [logs, setLogs] = useState<any[]>([]);
   const [evaluationData, setEvaluationData] = useState<any>(null);
   const [error, setError] = useState<string| null>(null);
-  const [activeTab, setActiveTab] = useState(0);
 
   async function load() {
     setError(null);
     const r = await api(`/assessments/runs/${runId}`);
     if (r.ok) setRun(await r.json()); else setError('Failed to load run');
-    const lg = await api(`/assessments/runs/${runId}/logs?limit=100`);
-    if (lg.ok) setLogs(await lg.json());
     // Load evaluation results for process steps
     const evalData = await api(`/reports/runs/${runId}`);
     if (evalData.ok) setEvaluationData(await evalData.json());
   }
 
-  useEffect(()=> { load(); const t = setInterval(load, 5000); return ()=> clearInterval(t); }, []);
+  useEffect(() => { load(); }, []);
+
+  const items = evaluationData?.items || [];
+  const accepted = items.filter((item: any) => {
+    const d = item.gating?.decision?.toLowerCase();
+    return d === 'pass' || d === 'accept';
+  });
+  const rejected = items.filter((item: any) => {
+    const d = item.gating?.decision?.toLowerCase();
+    return d === 'fail' || d === 'reject';
+  });
+  const middle = items.filter((item: any) => item.gating?.decision?.toLowerCase() === 'middle');
+  const total = items.length || 0;
+  const pct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
+  const statusRaw = (run?.status || 'unknown') as string;
+  const statusDisplay = statusRaw ? statusRaw.charAt(0).toUpperCase() + statusRaw.slice(1) : 'Unknown';
 
   return (
     <Container maxWidth="lg" sx={{ py: 3 }}>
       <Stack spacing={3}>
-      <Typography variant="h5">Run #{runId} Detail</Typography>
-      {error && <Alert severity="error">{error}</Alert>}
-      <Paper sx={{ p: 2 }}>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Typography>Status:</Typography>
-          <Chip size="small" label={run?.status || 'unknown'} />
-        </Stack>
+      <Stack direction="row" alignItems="center" spacing={1}>
         <Button 
-          variant="contained" 
-          color="primary" 
-          sx={{ mt: 2, borderRadius: 2, textTransform: 'none' }} 
-          onClick={()=>router.push(`/reports/${runId}`)}
+          variant="text" 
+          startIcon={<ArrowBack />} 
+          onClick={()=>router.push('/assessments')}
         >
-          📊 Open Report
+          Back
         </Button>
-      </Paper>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
-          <Tab label="Evaluation Process" />
-          <Tab label="Agent Conversations" />
-        </Tabs>
+        {run ? (
+          <Typography variant="h5">{run.name || `Evaluation #${runId}`}</Typography>
+        ) : (
+          <Skeleton variant="text" width={320} height={36} />
+        )}
+      </Stack>
+      {error && <Alert severity="error">{error}</Alert>}
+      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+        <StatCard 
+          title="Status" 
+          value={statusDisplay}
+          color={(statusRaw || '').toLowerCase() === 'completed' ? 'success' : (statusRaw || '').toLowerCase() === 'failed' ? 'error' : 'info'}
+        />
+        <StatCard title="Accepted" value={accepted.length} subtitle={`of ${total} total`} color="success" percent={pct(accepted.length)} chipLabel={`${pct(accepted.length)}%`} />
+        <StatCard title="Middle" value={middle.length} subtitle={`of ${total} total`} color="warning" percent={pct(middle.length)} chipLabel={`${pct(middle.length)}%`} />
+        <StatCard title="Rejected" value={rejected.length} subtitle={`of ${total} total`} color="error" percent={pct(rejected.length)} chipLabel={`${pct(rejected.length)}%`} />
       </Box>
-
-      {activeTab === 0 && (
-        <Box>
-          <Typography variant="h6" sx={{ mb: 2 }}>Evaluation Steps & Results</Typography>
-          <EvaluationProcess data={evaluationData} />
-        </Box>
-      )}
-
-      {activeTab === 1 && (
-        <Box>
-          <Typography variant="h6" sx={{ mb: 2 }}>Agent Conversations</Typography>
-          <ConversationView 
-            logs={logs.reverse()}
-            applicants={run?.applicants || []}
-          />
-        </Box>
-      )}
+      <Box>
+        <EvaluationProcess data={evaluationData} runId={runId} />
+      </Box>
       </Stack>
     </Container>
   );

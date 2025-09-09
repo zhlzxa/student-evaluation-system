@@ -25,14 +25,7 @@ test.describe('Assessment Workflow', () => {
     await expect(page).toHaveURL('/rules');
   });
 
-  test('should handle navigation to report page', async ({ page }) => {
-    // Test navigation to a report page (with a mock ID)
-    await page.goto('/reports/123');
-
-    // Should show the report page
-    await expect(page.getByText('Student Evaluation System')).toBeVisible();
-    await expect(page).toHaveURL('/reports/123');
-  });
+  // Report page removed
 
   test('should handle navigation to assessment run details', async ({ page }) => {
     // Test navigation to an assessment run details page (with a mock ID)

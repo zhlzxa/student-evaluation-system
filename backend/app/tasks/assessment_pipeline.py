@@ -437,21 +437,37 @@ def orchestrate_run(run_id: int) -> str:
                 db.commit()
                 r1 = db.query(ApplicantRanking).filter_by(applicant_id=aid1).one_or_none()
                 r2 = db.query(ApplicantRanking).filter_by(applicant_id=aid2).one_or_none()
+                
+                # Track if ranking was adjusted
+                ranking_adjusted = False
+                adjustment_note = ""
+                
                 if winner == "A" and sc1 < sc2:
                     # swap order to favor A
                     sc1, sc2 = sc2, sc1
                     scores[i] = (aid1, sc1)
                     scores[i + 1] = (aid2, sc2)
+                    ranking_adjusted = True
+                    adjustment_note = f"Ranked above {aid2} after comparison"
                 elif winner == "B" and sc2 < sc1:
                     sc1, sc2 = sc2, sc1
                     scores[i] = (aid1, sc1)
                     scores[i + 1] = (aid2, sc2)
-                # annotate notes
+                    ranking_adjusted = True
+                    adjustment_note = f"Ranked below {aid1} after comparison"
+                
+                # annotate notes with more detailed information
                 if r1:
-                    r1.notes = ((r1.notes or "") + f"BT vs {aid2}: {winner} ({reason}). ").strip()
+                    if ranking_adjusted and winner == "A":
+                        r1.notes = ((r1.notes or "") + f"🔄 {adjustment_note} (reason: {reason}). ").strip()
+                    else:
+                        r1.notes = ((r1.notes or "") + f"Compared with {aid2}: {winner} (reason: {reason}). ").strip()
                     db.add(r1)
                 if r2:
-                    r2.notes = ((r2.notes or "") + f"BT vs {aid1}: {winner} ({reason}). ").strip()
+                    if ranking_adjusted and winner == "B":
+                        r2.notes = ((r2.notes or "") + f"🔄 Ranked above {aid1} after comparison (reason: {reason}). ").strip()
+                    else:
+                        r2.notes = ((r2.notes or "") + f"Compared with {aid1}: {winner} (reason: {reason}). ").strip()
                     db.add(r2)
                 db.commit()
             # assign ranks based on updated scores

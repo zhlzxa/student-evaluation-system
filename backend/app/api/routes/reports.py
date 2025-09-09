@@ -29,6 +29,7 @@ def get_run_report(run_id: int, db: Session = Depends(get_db)):
         r = db.execute(select(ApplicantRanking).where(ApplicantRanking.applicant_id == a.id)).scalar_one_or_none()
         items.append({
             "applicant_id": a.id,
+            "display_name": a.display_name,
             "folder": a.folder_name,
             "evaluations": [
                 {"agent": e.agent_name, "score": e.score, "details": e.details} for e in evs

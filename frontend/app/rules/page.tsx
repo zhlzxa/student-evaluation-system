@@ -5,6 +5,7 @@ import { Alert, Box, Button, Card, Dialog, DialogActions, DialogContent, DialogT
 import { useState } from 'react';
 import { useToast } from '../../components/providers/ToastProvider';
 import { Add, Delete as DeleteIcon, Gavel } from '@mui/icons-material';
+import { formatLocalDateTime } from '../../lib/date';
 
 export default function RulesPage() {
   const api = useApi();
@@ -17,17 +18,7 @@ export default function RulesPage() {
   const [ruleToDelete, setRuleToDelete] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Format server datetime (likely UTC) into user's local timezone
-  const formatLocalDateTime = (value: string | Date | undefined): string => {
-    if (!value) return '';
-    const raw = typeof value === 'string' ? value : (value as Date).toISOString();
-    const hasTZ = /[zZ]|[+-]\d{2}:?\d{2}$/.test(raw);
-    const date = new Date(hasTZ ? raw : `${raw}Z`);
-    return new Intl.DateTimeFormat(undefined, {
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', second: '2-digit'
-    }).format(date);
-  };
+  // Use shared local datetime formatter
 
   const createMutation = useApiMutation(
     async (data: { url: string }) => {
