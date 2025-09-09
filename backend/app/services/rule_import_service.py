@@ -102,6 +102,7 @@ class RuleImportService:
                 'degree_requirement_class': url_rules.get('degree_requirement_class'),
                 'rule_set_url': url,
                 'text_length': url_rules.get('text_length', 0),
+                'programme_title': url_rules.get('programme_title'),
                 'auto_generated': True,
                 'temporary': temporary,
                 'extraction_method': 'azure_ai' if url_rules.get('_used_azure', True) else 'heuristic',

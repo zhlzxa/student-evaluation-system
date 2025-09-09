@@ -157,7 +157,7 @@ export default function RulesPage() {
                     key={rs.id}
                     sx={{ '&:hover': { backgroundColor: 'action.hover' } }}
                   >
-                    <TableCell sx={{ py: 2 }}>{rs.name}</TableCell>
+                    <TableCell sx={{ py: 2 }}>{rs?.metadata_json?.programme_title || rs.name}</TableCell>
                     <TableCell sx={{ py: 2 }}>{formatLocalDateTime(rs.created_at)}</TableCell>
                     <TableCell align="center" sx={{ py: 2 }}>
                       <IconButton

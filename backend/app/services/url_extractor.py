@@ -112,35 +112,88 @@ def extract_programme_title_from_text(page_text: str, url: str) -> str:
         Extracted programme title or auto-generated name
     """
     try:
-        # Look for common programme title patterns in first few lines
-        lines = page_text.split('\n')[:10]  # Check first 10 lines
-        
-        for line in lines:
-            line = line.strip()
+        import re
+        from urllib.parse import urlparse
+
+        def clean_candidate(text: str) -> str:
+            # Remove segments that are clearly site-wide labels
+            junk_markers = [
+                'university college london', 'ucl', 'prospective students', 'graduate',
+                'taught degrees', 'research degrees', 'home', 'study', 'programmes'
+            ]
+            # Split by common separators and keep the most specific left part
+            separators = ['|', '—', '–', '-', '·']
+            candidate = text
+            for sep in separators:
+                if sep in candidate:
+                    parts = [p.strip() for p in candidate.split(sep) if p.strip()]
+                    # Prefer the first part containing a degree suffix
+                    preferred = None
+                    degree_re = re.compile(r"\b(MSc|MA|MRes|MPhil|PhD|MBA|LLM|MEng)\b", re.IGNORECASE)
+                    for p in parts:
+                        if degree_re.search(p):
+                            preferred = p
+                            break
+                    candidate = preferred or parts[0]
+                    break
+
+            # Drop junk tails like ": UCL" etc.
+            lowered = candidate.lower()
+            for marker in junk_markers:
+                idx = lowered.find(marker)
+                if idx != -1:
+                    candidate = candidate[:idx].strip()
+                    break
+
+            # Normalize whitespace
+            candidate = re.sub(r"\s+", " ", candidate).strip()
+            return candidate
+
+        # 1) Scan the first few lines for a concise "Title + Degree" pattern
+        degree_pattern = re.compile(r"^(?P<title>.+?)\s+(?P<deg>MSc|MA|MRes|MPhil|PhD|MBA|LLM|MEng)\b", re.IGNORECASE)
+        for raw in page_text.split('\n')[:12]:
+            line = raw.strip()
             if not line:
                 continue
-                
-            # Look for Master's or MSc programmes
-            if any(keyword in line.lower() for keyword in ['msc', 'master', 'ma ', 'mres', 'programme', 'degree']):
-                # Clean up the line
-                title = line.replace('|', ' ').replace(' - UCL', '').replace(' | UCL', '').strip()
-                if len(title) > 10 and len(title) < 200:  # Reasonable length
-                    return title
-        
-        # Fallback: try to extract from URL
-        if 'programmes' in url.lower() or 'courses' in url.lower():
-            url_parts = url.split('/')
-            for part in reversed(url_parts):
-                if part and not part.isdigit() and len(part) > 3:
-                    # Clean up URL part
-                    title = part.replace('-', ' ').replace('_', ' ').title()
-                    if len(title) > 5:
-                        return f"{title} Programme"
-        
-        # Final fallback
+            m = degree_pattern.search(line)
+            if m:
+                candidate = f"{m.group('title').strip()} {m.group('deg').upper()}"
+                candidate = clean_candidate(candidate)
+                if 5 <= len(candidate) <= 120:
+                    return candidate
+            # If not matched, still try to clean a line that obviously contains degree keywords
+            if any(k in line.lower() for k in ['msc', 'mres', 'mphil', 'phd', 'mba', 'llm', 'meng']):
+                candidate = clean_candidate(line)
+                if 5 <= len(candidate) <= 120:
+                    return candidate
+
+        # 2) Fallback: derive from URL slug
+        try:
+            parsed = urlparse(url)
+            segments = [s for s in parsed.path.split('/') if s and not s.isdigit()]
+            if segments:
+                slug = segments[-1]
+                m = re.match(r"(?P<title>.+?)(?:-(?P<deg>msc|ma|mres|mphil|phd|mba|llm|meng))?$", slug, re.IGNORECASE)
+                if m:
+                    title_part = m.group('title').replace('-', ' ').replace('_', ' ').strip()
+                    deg = m.group('deg')
+                    # Title case with small words preserved
+                    small = {'and','or','of','in','the','a','an','with','for','to'}
+                    words = [w.lower() for w in title_part.split()]
+                    tc = ' '.join(w.upper() if w.upper() in {'UCL'} else (w if w in small else w.capitalize()) for w in words)
+                    candidate = tc
+                    if deg:
+                        candidate = f"{candidate} {deg.upper()}"
+                    candidate = clean_candidate(candidate)
+                    if 5 <= len(candidate) <= 120:
+                        return candidate
+        except Exception:
+            pass
+
+        # 3) Final fallback
         from datetime import datetime
         return f"Programme Rules {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}"
-        
+
     except Exception as e:
         logger.warning(f"Could not extract programme title: {e}")
         from datetime import datetime
