@@ -88,40 +88,108 @@ class URLRulesExtractor:
         # Build prompt
         prompt = self._build_parsing_prompt(page_text, custom_requirements)
 
-        try:
-            # Use single-turn conversation with Azure AI agent
-            response_text = await run_single_turn(
-                name="URL-Rules-Extractor",
-                instructions="You are an expert at extracting admission requirements from university programme webpages. Extract the information exactly as requested in the user's prompt.",
-                message=prompt,
-                with_bing_grounding=True,  # Enable web grounding for better accuracy
-                model=deployment,
-            )
+        # Retry logic for JSON parsing
+        max_retries = 3
+        last_error = None
+        
+        for attempt in range(max_retries):
+            try:
+                # Use single-turn conversation with Azure AI agent
+                response_text = await run_single_turn(
+                    name="URL-Rules-Extractor",
+                    instructions="You are a JSON extraction specialist. You must return ONLY valid JSON with no additional text, explanations, or formatting. Follow the user's format requirements exactly.",
+                    message=prompt,
+                    with_bing_grounding=True,  # Enable web grounding for better accuracy
+                    model=deployment,
+                )
 
-            # Parse JSON text from agent
-            parsed = self._parse_agent_response(response_text, custom_requirements)
-            return parsed
-            
-        except Exception as e:
-            logger.error(f"Azure agent parsing failed: {e}")
-            raise e
+                # Parse JSON text from agent
+                parsed = self._parse_agent_response(response_text, custom_requirements)
+                logger.info(f"Successfully parsed JSON on attempt {attempt + 1}")
+                return parsed
+                
+            except json.JSONDecodeError as e:
+                last_error = e
+                logger.warning(f"JSON parsing failed on attempt {attempt + 1}: {e}")
+                if attempt < max_retries - 1:
+                    # Modify prompt for retry to be more explicit
+                    prompt = self._build_retry_prompt(page_text, custom_requirements, response_text if 'response_text' in locals() else None)
+                    continue
+            except Exception as e:
+                logger.error(f"Azure agent parsing failed on attempt {attempt + 1}: {e}")
+                raise e
+        
+        logger.error(f"Failed to get valid JSON after {max_retries} attempts, last error: {last_error}")
+        raise RuntimeError(f"Failed to parse JSON after {max_retries} attempts: {last_error}")
 
     def _build_parsing_prompt(self, page_text: str, custom_requirements: list[str] | None = None) -> str:
-        max_text_length = 15000
-        if len(page_text) > max_text_length:
-            page_text = page_text[:max_text_length] + "\n...[TEXT TRUNCATED]"
         return (
-            "Analyze the following UCL programme webpage content and extract admission requirements into agent-specific checklists.\n\n"
+            "You are a JSON extraction specialist. Your task is to analyze UCL programme webpage content and extract admission requirements.\n\n"
             f"Programme Webpage Content:\n{page_text}\n\n"
             f"Custom Requirements to Include: {custom_requirements or []}\n\n"
-            "IMPORTANT: Return ONLY a valid JSON object in this exact format. Do not include any text before or after the JSON. Do not use code fences.\n\n"
-            "Required JSON structure:\n{\n  \"checklists\": {\n    \"english_agent\": [\"requirement 1\"],\n    \"degree_agent\": [\"requirement 1\"],\n    \"experience_agent\": [],\n    \"ps_rl_agent\": [],\n    \"academic_agent\": []\n  },\n  \"english_level\": \"string or null\",\n  \"degree_requirement_class\": \"FIRST or UPPER_SECOND or LOWER_SECOND or null\"\n}\n"
+            "CRITICAL INSTRUCTIONS:\n"
+            "- You MUST return ONLY valid JSON, nothing else\n"
+            "- NO explanatory text before or after the JSON\n"
+            "- NO markdown code fences or backticks\n"
+            "- NO comments or additional formatting\n"
+            "- The response must start with { and end with }\n\n"
+            "Required JSON structure (return exactly this format):\n"
+            "{\n"
+            '  "checklists": {\n'
+            '    "english_agent": ["requirement 1", "requirement 2"],\n'
+            '    "degree_agent": ["requirement 1", "requirement 2"],\n'
+            '    "experience_agent": ["requirement if any"],\n'
+            '    "ps_rl_agent": ["requirement if any"],\n'
+            '    "academic_agent": ["requirement if any"]\n'
+            '  },\n'
+            '  "english_level": "level1/level2/level3 or null",\n'
+            '  "degree_requirement_class": "FIRST/UPPER_SECOND/LOWER_SECOND or null"\n'
+            "}\n\n"
+            "START YOUR RESPONSE WITH THE JSON OBJECT NOW:"
+        )
+    
+    def _build_retry_prompt(self, page_text: str, custom_requirements: list[str] | None = None, failed_response: str | None = None) -> str:
+        retry_instruction = ""
+        if failed_response:
+            retry_instruction = f"\n\nPREVIOUS FAILED RESPONSE:\n{failed_response[:200]}...\n\nThe above response was invalid JSON. Please correct this and return ONLY valid JSON.\n\n"
+        
+        return (
+            "RETRY: You previously failed to return valid JSON. This is your second chance.\n\n"
+            "You are a JSON extraction specialist. Your ONLY job is to return valid JSON.\n\n"
+            f"Programme Webpage Content:\n{page_text}\n\n"
+            f"Custom Requirements to Include: {custom_requirements or []}\n\n"
+            f"{retry_instruction}"
+            "MANDATORY REQUIREMENTS:\n"
+            "1. Return ONLY JSON - no text before or after\n"
+            "2. No markdown, no backticks, no code fences\n"
+            "3. Start with { and end with }\n"
+            "4. Use this exact structure:\n\n"
+            "{\n"
+            '  "checklists": {\n'
+            '    "english_agent": [],\n'
+            '    "degree_agent": [],\n'
+            '    "experience_agent": [],\n'
+            '    "ps_rl_agent": [],\n'
+            '    "academic_agent": []\n'
+            '  },\n'
+            '  "english_level": null,\n'
+            '  "degree_requirement_class": null\n'
+            "}\n\n"
+            "RESPOND WITH JSON NOW (no other text):"
         )
 
     def _parse_agent_response(self, response_text: str, custom_requirements: list[str] | None = None) -> dict[str, Any]:
         cleaned = self._clean_json_response(response_text)
+        logger.debug(f"Attempting to parse JSON: {cleaned[:200]}...")
+        
         try:
             parsed = json.loads(cleaned)
+            logger.info("Successfully parsed JSON response")
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON parsing failed. Raw response: {response_text[:500]}...")
+            logger.error(f"Cleaned response: {cleaned[:500]}...")
+            logger.error(f"JSON error: {e}")
+            raise e  # Re-raise to trigger retry logic
         except Exception as e:
             logger.warning(f"Agent JSON parse failed, falling back. Error: {e}")
             return self._get_fallback_rules(custom_requirements)
@@ -131,11 +199,40 @@ class URLRulesExtractor:
         # Remove markdown code fences and trim to JSON object bounds
         cleaned = re.sub(r"^```(?:json)?\s*", "", response.strip(), flags=re.MULTILINE)
         cleaned = re.sub(r"\s*```$", "", cleaned.strip(), flags=re.MULTILINE)
-        if not cleaned.strip().startswith("{"):
+        
+        # Remove any leading/trailing explanatory text
+        cleaned = cleaned.strip()
+        
+        # Find JSON object boundaries more aggressively
+        if not cleaned.startswith("{"):
             start = cleaned.find("{")
+            if start == -1:
+                logger.warning(f"No JSON object found in response: {cleaned[:200]}...")
+                return "{}"
+            cleaned = cleaned[start:]
+        
+        if not cleaned.endswith("}"):
             end = cleaned.rfind("}")
-            if start != -1 and end != -1 and end > start:
-                cleaned = cleaned[start : end + 1]
+            if end == -1:
+                logger.warning(f"No closing brace found in response: {cleaned[:200]}...")
+                return "{}"
+            cleaned = cleaned[:end + 1]
+        
+        # Remove any text after the JSON object
+        brace_count = 0
+        json_end = -1
+        for i, char in enumerate(cleaned):
+            if char == '{':
+                brace_count += 1
+            elif char == '}':
+                brace_count -= 1
+                if brace_count == 0:
+                    json_end = i
+                    break
+        
+        if json_end != -1 and json_end < len(cleaned) - 1:
+            cleaned = cleaned[:json_end + 1]
+        
         return cleaned
 
     def _parse_rules_heuristic(self, page_text: str, custom_requirements: list[str] | None = None) -> dict[str, Any]:
