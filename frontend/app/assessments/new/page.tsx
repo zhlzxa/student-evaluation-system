@@ -1,5 +1,5 @@
 "use client";
-import { Alert, Box, Button, Card, CardContent, Stack, TextField, Typography, ToggleButton, ToggleButtonGroup, InputAdornment, Collapse, Paper, Chip, FormControl, InputLabel, Select, MenuItem, FormHelperText, CircularProgress } from '@mui/material';
+import { Alert, Box, Button, Card, CardContent, Stack, TextField, Typography, ToggleButton, ToggleButtonGroup, InputAdornment, Collapse, Paper, Chip, FormControl, InputLabel, Select, MenuItem, FormHelperText, CircularProgress, Dialog, DialogTitle, DialogContent } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import { useApi } from '../../../lib/api';
 import { useQuery } from '@tanstack/react-query';
@@ -22,8 +22,13 @@ export default function NewAssessmentPage() {
   const lastSpecKeyRef = useRef<string>('');
   const [isDragActive, setIsDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [startDialogOpen, setStartDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const preserveRunRef = useRef(false);
+  // Keep latest references to avoid stale closures in unmount cleanup
+  const runRef = useRef<any>(null);
+  const apiRef = useRef(api);
   const searchParams = useSearchParams();
 
   const ruleSets = useQuery({
@@ -39,15 +44,20 @@ export default function NewAssessmentPage() {
     setRun({ id: Number(idParam), status: 'created' });
   }, [searchParams, run]);
 
-  // Cleanup: destroy unstarted run when leaving the page unless explicitly preserved
+  // Sync refs when values change
+  useEffect(() => { runRef.current = run; }, [run]);
+  useEffect(() => { apiRef.current = api; }, [api]);
+
+  // Cleanup only on unmount: destroy unstarted run unless explicitly preserved
   useEffect(() => {
     return () => {
-      const shouldDelete = !preserveRunRef.current && run && (['created', 'pending'].includes(String(run.status).toLowerCase()));
+      const currentRun = runRef.current;
+      const shouldDelete = !preserveRunRef.current && currentRun && (['created', 'pending'].includes(String(currentRun.status).toLowerCase()));
       if (shouldDelete) {
-        void api(`/assessments/runs/${run.id}`, { method: 'DELETE' });
+        void apiRef.current(`/assessments/runs/${currentRun.id}`, { method: 'DELETE' });
       }
     };
-  }, [api, run]);
+  }, []);
 
   // Ensure a run exists and bind rule set when selection becomes valid
   useEffect(() => {
@@ -108,28 +118,56 @@ export default function NewAssessmentPage() {
     fd.append('file', file);
     const r = await api(`/assessments/runs/${run.id}/upload`, { method: 'POST', body: fd });
     if (r.ok) {
-      const u = await r.json();
-      setRun(u);
+      // Refresh run detail to include applicants/documents for UI feedback
+      await refreshRunDetail(run.id);
     } else {
       setError('Upload failed');
     }
     setUploading(false);
   };
 
+  const refreshRunDetail = async (id?: number) => {
+    const rid = id ?? run?.id;
+    if (!rid) return;
+    const resp = await api(`/assessments/runs/${rid}`);
+    if (resp.ok) {
+      const detail = await resp.json();
+      setRun(detail);
+    }
+  };
+
   const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const inputEl = e.currentTarget;
+    const file = inputEl.files?.[0];
     if (!file) return;
     await handleFileUpload(file);
     // Reset input value so the same file can be selected again if needed
-    e.currentTarget.value = '';
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    } else if (inputEl) {
+      inputEl.value = '';
+    }
   };
 
   const onStart = async () => {
-    if (!run) return;
+    if (!run || starting) return;
+    setStartDialogOpen(true);
+    setStarting(true);
     preserveRunRef.current = true;
     const r = await api(`/assessments/runs/${run.id}/start`, { method: 'POST' });
-    if (!r.ok) { setError('Failed to start'); return; }
+    if (!r.ok) {
+      setError('Failed to start');
+      setStarting(false);
+      setStartDialogOpen(false);
+      return;
+    }
     const u = await r.json(); setRun(u);
+    // brief pause for UX before navigation
+    setTimeout(() => {
+      setStarting(false);
+      setStartDialogOpen(false);
+      router.push('/assessments');
+    }, 1800);
   };
 
   const onCancel = async () => {
@@ -337,6 +375,11 @@ export default function NewAssessmentPage() {
               <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ mt: 1 }}>
                 {(creating || uploading) && <CircularProgress size={18} />}
               </Stack>
+              {run?.status === 'uploaded' && Array.isArray(run?.applicants) && (
+                <Typography variant="body2" color="success.main" sx={{ mt: 1 }}>
+                  Uploaded {run.applicants.length} applicants
+                </Typography>
+              )}
             </Stack>
           </Paper>
         </Stack>
@@ -366,6 +409,21 @@ export default function NewAssessmentPage() {
           </Button>
         </Stack>
       )}
+
+      <Dialog open={startDialogOpen} onClose={() => {}} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ fontWeight: 700 }}>Starting evaluation…</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} alignItems="center" sx={{ py: 1 }}>
+            <CircularProgress size={28} />
+            <Typography variant="body1" align="center" sx={{ fontWeight: 500 }}>
+              Each applicant may take around 2 minutes to evaluate.
+            </Typography>
+            <Typography variant="body2" color="text.secondary" align="center">
+              Please be patient. You'll be redirected to the history page shortly.
+            </Typography>
+          </Stack>
+        </DialogContent>
+      </Dialog>
     </Stack>
     </Box>
   );

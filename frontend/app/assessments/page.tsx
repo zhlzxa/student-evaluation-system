@@ -171,7 +171,7 @@ export default function EvaluationHistoryPage() {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Assessment color="primary" />
                           <Typography variant="body1" fontWeight="medium">
-                            Evaluation #{evaluation.id}
+                            {evaluation.name || `Evaluation #${evaluation.id}`}
                           </Typography>
                         </Box>
                       </TableCell>
@@ -238,7 +238,7 @@ export default function EvaluationHistoryPage() {
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="delete-dialog-description">
-            Are you sure you want to delete Evaluation #{evaluationToDelete?.id}? 
+            Are you sure you want to delete {evaluationToDelete?.name || `Evaluation #${evaluationToDelete?.id}`}? 
             This action cannot be undone and will permanently remove all associated data.
           </DialogContentText>
         </DialogContent>

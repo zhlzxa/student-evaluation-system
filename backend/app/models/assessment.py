@@ -13,6 +13,7 @@ class AssessmentRun(Base):
     __tablename__ = "assessment_runs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str | None] = mapped_column(String(256))
     rule_set_id: Mapped[int | None] = mapped_column(ForeignKey("admission_rule_sets.id", ondelete="SET NULL"))
     rule_set_url: Mapped[str | None] = mapped_column(String(1000))
     custom_requirements: Mapped[list[str] | None] = mapped_column(JSON)

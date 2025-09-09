@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from pathlib import Path
+from datetime import datetime
 
 from app.db.session import get_db
 from app.api.dependencies import get_current_active_user
@@ -25,6 +26,12 @@ from app.models.run_log import RunLog
 
 
 router = APIRouter(prefix="/assessments", tags=["assessments"])
+def _generate_run_name(rule_set_name: str) -> str:
+    """Create a human-friendly run name: "Major-YYYY-MM".
+
+    The major/program name is taken from the bound rule set's name.
+    """
+    return f"{rule_set_name}-{datetime.utcnow().strftime('%Y-%m')}"
 
 
 @router.get("/health")
@@ -63,6 +70,11 @@ def create_run(
         agent_models=agent_models,
         status="created",
     )
+    # If rule_set_id provided at creation time, set a generated name
+    if data.rule_set_id:
+        rs = db.get(AdmissionRuleSet, data.rule_set_id)
+        if rs:
+            run.name = _generate_run_name(rs.name)
     db.add(run)
     db.commit()
     db.refresh(run)
@@ -116,6 +128,7 @@ async def create_run_with_url_import(
             agent_models=agent_models,
             status="created",
         )
+        run.name = _generate_run_name(rule_set.name)
         
         db.add(run)
         db.commit()
@@ -247,6 +260,7 @@ async def update_run_rule_set(
             raise HTTPException(status_code=404, detail="Rule set not found")
         run.rule_set_id = rs.id
         run.rule_set_url = None
+        run.name = _generate_run_name(rs.name)
     else:
         # Import from URL, then bind to run
         rule_set, _ = await RuleImportService.import_rules_from_url(
@@ -258,6 +272,7 @@ async def update_run_rule_set(
         )
         run.rule_set_id = rule_set.id
         run.rule_set_url = payload.rule_set_url
+        run.name = _generate_run_name(rule_set.name)
 
     if payload.custom_requirements is not None:
         run.custom_requirements = payload.custom_requirements
