@@ -36,13 +36,33 @@ export default function NewAssessmentPage() {
     queryFn: async () => (await (await api('/rules/sets')).json()),
   });
 
-  // Initialize run from query param when landing from Create
+  // Initialize run: from query if provided, otherwise create on first load
   useEffect(() => {
-    const idParam = searchParams?.get('runId');
-    if (!idParam) return;
-    if (run && Number(run.id) === Number(idParam)) return;
-    setRun({ id: Number(idParam), status: 'created' });
-  }, [searchParams, run]);
+    const init = async () => {
+      const idParam = searchParams?.get('runId');
+      if (idParam) {
+        if (!run || Number(run.id) !== Number(idParam)) {
+          setRun({ id: Number(idParam), status: 'created' });
+        }
+        return;
+      }
+      if (!run && !creating) {
+        setCreating(true);
+        try {
+          const resp = await api('/assessments/runs', { method: 'POST', body: JSON.stringify({}) });
+          if (resp.ok) {
+            const created = await resp.json();
+            setRun(created);
+          } else {
+            setError('Failed to create run');
+          }
+        } finally {
+          setCreating(false);
+        }
+      }
+    };
+    void init();
+  }, [searchParams, run, creating, api]);
 
   // Sync refs when values change
   useEffect(() => { runRef.current = run; }, [run]);
@@ -205,7 +225,7 @@ export default function NewAssessmentPage() {
                 mb: 0.5
               }}
             >
-              New Assessment
+              New Admission Review
             </Typography>
             <Typography variant="body1" color="text.secondary">
               Select a rule set, upload a ZIP, and start the evaluation
@@ -397,7 +417,7 @@ export default function NewAssessmentPage() {
               '&:hover': { boxShadow: 3 }
             }}
           >
-            Start Evaluation
+            Start Admission Review
           </Button>
           <Button 
             color="error"
@@ -411,15 +431,15 @@ export default function NewAssessmentPage() {
       )}
 
       <Dialog open={startDialogOpen} onClose={() => {}} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ fontWeight: 700 }}>Starting evaluation…</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>Starting admission review…</DialogTitle>
         <DialogContent>
           <Stack spacing={2} alignItems="center" sx={{ py: 1 }}>
             <CircularProgress size={28} />
             <Typography variant="body1" align="center" sx={{ fontWeight: 500 }}>
-              Each applicant may take around 2 minutes to evaluate.
+              Each applicant may take around 2 minutes to review.
             </Typography>
             <Typography variant="body2" color="text.secondary" align="center">
-              Please be patient. You'll be redirected to the history page shortly.
+              Please be patient. You'll be redirected to the admission reviews page shortly.
             </Typography>
           </Stack>
         </DialogContent>

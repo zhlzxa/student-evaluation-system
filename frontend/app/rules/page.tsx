@@ -7,7 +7,7 @@ import { useToast } from '../../components/providers/ToastProvider';
 import { Add, Delete as DeleteIcon, Gavel } from '@mui/icons-material';
 import { formatLocalDateTime } from '../../lib/date';
 
-export default function RulesPage() {
+export default function MetricsPage() {
   const api = useApi();
   const { addToast } = useToast();
   const rules = useApiQuery(['rules-sets'], '/rules/sets');
@@ -82,10 +82,10 @@ export default function RulesPage() {
                 mb: 0.5
               }}
             >
-              Rule Management
+              Metrics
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Create, import, and manage rule sets
+              Import and delete programme admission requirements
             </Typography>
           </Box>
           <Button

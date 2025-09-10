@@ -167,7 +167,7 @@ export default function EvaluationHistoryPage() {
                   mb: 0.5
                 }}
               >
-                Assessments
+                Admission Reviews
               </Typography>
               <Typography variant="body1" color="text.secondary">
                 View and manage your admission review sessions
@@ -176,19 +176,9 @@ export default function EvaluationHistoryPage() {
             <Button
               variant="contained"
               startIcon={<Add />}
-              onClick={async () => {
-                if (creating) return;
-                try {
-                  setCreating(true);
-                  const resp = await api('/assessments/runs', { method: 'POST', body: JSON.stringify({}) });
-                  if (!resp.ok) return;
-                  const created = await resp.json();
-                  router.push(`/assessments/new?runId=${created.id}`);
-                } finally {
-                  setCreating(false);
-                }
+              onClick={() => {
+                router.push('/assessments/new');
               }}
-              disabled={creating}
               sx={{
                 backgroundColor: 'primary.main',
                 color: 'primary.contrastText',
@@ -204,14 +194,14 @@ export default function EvaluationHistoryPage() {
                 }
               }}
             >
-              {creating ? 'Creating…' : 'Create'}
+              Create
             </Button>
           </Box>
           <TableContainer component={Paper} elevation={2}>
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Evaluation</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Admission Review</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', position: 'relative', pr: 6, '&:hover .status-menu-btn': { opacity: 1, pointerEvents: 'auto' } }}>
                       <TableSortLabel
                         active={orderBy === 'status'}
@@ -246,7 +236,7 @@ export default function EvaluationHistoryPage() {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Assessment color="primary" />
                           <Typography variant="body1" fontWeight="medium">
-                            {evaluation.name || `Evaluation #${evaluation.id}`}
+                            {evaluation.name || `Admission Review #${evaluation.id}`}
                           </Typography>
                         </Box>
                       </TableCell>
@@ -310,10 +300,10 @@ export default function EvaluationHistoryPage() {
             <Card elevation={1} sx={{ p: 4, textAlign: 'center' }}>
               <Assessment sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                No evaluations found
+                No admission reviews found
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Start a new evaluation to see it here.
+                Start a new admission review to see it here.
               </Typography>
             </Card>
           )}
@@ -331,7 +321,7 @@ export default function EvaluationHistoryPage() {
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="delete-dialog-description">
-            Are you sure you want to delete {evaluationToDelete?.name || `Evaluation #${evaluationToDelete?.id}`}? 
+            Are you sure you want to delete {evaluationToDelete?.name || `Admission Review #${evaluationToDelete?.id}`}? 
             This action cannot be undone and will permanently remove all associated data.
           </DialogContentText>
         </DialogContent>

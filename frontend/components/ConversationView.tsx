@@ -35,9 +35,9 @@ function getAgentDisplayName(agentName: string): string {
   const agentNameMap: Record<string, string> = {
     'english': 'English Proficiency',
     'degree': 'Degree Qualification',
-    'experience': 'Work Experience', 
+    'experience': 'Experience', 
     'ps_rl': 'Personal Statement & References',
-    'academic': 'Academic Background',
+    'academic': 'Academic Publications',
     'compare': 'Comparison Analysis',
     'classifier': 'Classification',
     'detector': 'Detection Analysis'

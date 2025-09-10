@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Container, Stack, Typography, Paper, Button, Breadcrumbs, Link as MUILink, Skeleton } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
-import ConversationView from '../../../../../../components/ConversationView';
 import { useApi } from '../../../../../../lib/api';
+import ApplicantResultView from '../../../../../../components/ApplicantResultView';
 
 export default function ApplicantDetailNestedPage() {
   const params = useParams<{ id: string; applicantId: string }>();
@@ -15,29 +15,25 @@ export default function ApplicantDetailNestedPage() {
   const router = useRouter();
 
   const [run, setRun] = useState<any>(null);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [report, setReport] = useState<any>(null);
 
   useEffect(() => {
     async function load() {
       const r = await api(`/assessments/runs/${runId}`);
       if (r.ok) setRun(await r.json());
-      const lg = await api(`/assessments/runs/${runId}/logs?limit=200`);
-      if (lg.ok) setLogs(await lg.json());
+      const rv = await api(`/reports/runs/${runId}`);
+      if (rv.ok) setReport(await rv.json());
     }
     load();
   }, [runId]);
 
-  const applicants = useMemo(() => {
-    const list = run?.applicants || [];
-    return list.filter((a: any) => a.id === applicantId);
-  }, [run, applicantId]);
-
-  const filteredLogs = useMemo(() => {
-    return logs.filter((l) => l.applicant_id === applicantId);
-  }, [logs, applicantId]);
+  const item = useMemo(() => {
+    const items = report?.items || [];
+    return items.find((it: any) => it.applicant_id === applicantId) || null;
+  }, [report, applicantId]);
 
   const runName = run?.name;
-  const applicantName = applicants && applicants[0]?.folder_name;
+  const applicantName = item?.display_name || item?.folder;
 
   return (
     <Container maxWidth="lg" sx={{ py: 3 }}>
@@ -82,8 +78,15 @@ export default function ApplicantDetailNestedPage() {
         </Stack>
 
         <Paper sx={{ p: 2 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>Agent Conversations</Typography>
-          <ConversationView logs={filteredLogs} applicants={applicants} />
+          {item ? (
+            <ApplicantResultView item={item} />
+          ) : (
+            <Stack spacing={1}>
+              <Skeleton variant="text" width={320} height={28} />
+              <Skeleton variant="rectangular" height={120} />
+              <Skeleton variant="rectangular" height={200} />
+            </Stack>
+          )}
         </Paper>
       </Stack>
     </Container>

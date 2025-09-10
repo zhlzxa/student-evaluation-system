@@ -1,10 +1,8 @@
 "use client";
 import { PropsWithChildren, useMemo } from 'react';
 import { AppBar, Box, Container, CssBaseline, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Toolbar, Typography, Button } from '@mui/material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import RuleIcon from '@mui/icons-material/Rule';
-import HistoryIcon from '@mui/icons-material/History';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import InsightsIcon from '@mui/icons-material/Insights';
+import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
@@ -16,10 +14,8 @@ export function AppShell({ children }: PropsWithChildren) {
   const drawerWidth = 260;
   
   const nav = useMemo(() => [
-    { label: 'Dashboard', icon: <DashboardIcon />, href: '/' },
-    { label: 'New Assessment', icon: <AddCircleOutlineIcon />, href: '/assessments/new' },
-    { label: 'Evaluation History', icon: <HistoryIcon />, href: '/assessments' },
-    { label: 'Rules', icon: <RuleIcon />, href: '/rules' },
+    { label: 'Home', icon: <HomeIcon />, href: '/assessments' },
+    { label: 'Metrics', icon: <InsightsIcon />, href: '/rules' },
   ], []);
 
   const handleLogout = async () => {
@@ -78,7 +74,8 @@ export function AppShell({ children }: PropsWithChildren) {
       </Drawer>
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Toolbar />
-        <Container maxWidth={false} disableGutters>
+        {/* Constrain content width for better readability and consistent card layout */}
+        <Container maxWidth="lg" sx={{ px: 2 }}>
           {children}
         </Container>
       </Box>

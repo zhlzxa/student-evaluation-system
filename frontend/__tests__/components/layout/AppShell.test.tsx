@@ -49,7 +49,7 @@ describe('AppShell', () => {
     // Navigation items should be visible without clicking any menu
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
     expect(screen.getByText('New Assessment')).toBeInTheDocument()
-    expect(screen.getByText('Evaluation History')).toBeInTheDocument()
+    expect(screen.getByText('Home')).toBeInTheDocument()
     expect(screen.getByText('Rules')).toBeInTheDocument()
   })
 
