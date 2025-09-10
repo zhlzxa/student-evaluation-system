@@ -16,6 +16,7 @@ class AssessmentRunCreate(BaseModel):
 class AssessmentRunRead(BaseModel):
     id: int
     name: str | None
+    owner_user_id: int | None
     rule_set_id: int | None
     rule_set_url: str | None
     custom_requirements: list[str] | None

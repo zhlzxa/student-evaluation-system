@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.db.session import get_db
+from app.api.dependencies import get_current_active_user
+from app.models.user import User
 from app.models.assessment import AssessmentRun, Applicant
 from app.models.evaluation import ApplicantEvaluation, ApplicantGating, ApplicantRanking, PairwiseComparison
 
@@ -13,10 +15,16 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 
 
 @router.get("/runs/{run_id}")
-def get_run_report(run_id: int, db: Session = Depends(get_db)):
+def get_run_report(
+    run_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
     run = db.get(AssessmentRun, run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
+    if (not current_user.is_superuser) and (run.owner_user_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Forbidden")
     applicants = db.execute(select(Applicant).where(Applicant.run_id == run_id)).scalars().all()
     items = []
     # sort applicants by ranking.final_rank if available, otherwise by id

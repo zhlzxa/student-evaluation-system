@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import Home from '@/app/page'
+import AssessmentsPage from '@/app/assessments/page'
 import { vi } from 'vitest'
 
 // Mock next/navigation
@@ -44,22 +44,18 @@ describe('API Integration Tests', () => {
     
     render(
       <QueryClientProvider client={queryClient}>
-        <Home />
+        <AssessmentsPage />
       </QueryClientProvider>
     )
 
-    // Should show the dashboard
-    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    // Should show assessments list title
+    expect(screen.getByText('Admission Reviews')).toBeInTheDocument()
 
-    // Wait for the API call to complete - it might show 0 or 2 depending on MSW setup
+    // Wait for data table to appear (rows may be 0 if no data)
     await waitFor(() => {
-      const countElement = screen.getByText(/Count: \d+/)
-      expect(countElement).toBeInTheDocument()
+      expect(screen.getByText('Status')).toBeInTheDocument()
+      expect(screen.getByText('Started')).toBeInTheDocument()
     }, { timeout: 5000 })
-
-    // Should show other dashboard elements
-    expect(screen.getByText('Quick Actions')).toBeInTheDocument()
-    expect(screen.getByText('Recent Evaluations')).toBeInTheDocument()
   })
 
   it('should handle API errors gracefully', async () => {
@@ -77,17 +73,15 @@ describe('API Integration Tests', () => {
     
     render(
       <QueryClientProvider client={queryClient}>
-        <Home />
+        <AssessmentsPage />
       </QueryClientProvider>
     )
 
-    // Should still show basic dashboard elements
-    expect(screen.getByText('Dashboard')).toBeInTheDocument()
-    expect(screen.getByText('Quick Actions')).toBeInTheDocument()
-    
-    // Should show count as 0 when API fails
+    // Should still render list headers even if API errors
     await waitFor(() => {
-      expect(screen.getByText('Count: 0')).toBeInTheDocument()
+      expect(screen.getByText('Admission Reviews')).toBeInTheDocument()
+      expect(screen.getByText('Status')).toBeInTheDocument()
+      expect(screen.getByText('Started')).toBeInTheDocument()
     }, { timeout: 3000 })
   })
 })

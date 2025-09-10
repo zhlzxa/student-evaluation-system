@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import Home from '@/app/page'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { vi } from 'vitest'
+import { vi, beforeEach } from 'vitest'
 
 // Mock dependencies
 vi.mock('next/navigation')

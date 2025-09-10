@@ -66,6 +66,7 @@ def create_run(
         agent_models = dict(data.agent_models)
 
     run = AssessmentRun(
+        owner_user_id=current_user.id,
         rule_set_id=data.rule_set_id,
         rule_set_url=data.rule_set_url,
         custom_requirements=data.custom_requirements or [],
@@ -124,6 +125,7 @@ async def create_run_with_url_import(
         
         # Create assessment run with the imported rule set
         run = AssessmentRun(
+            owner_user_id=current_user.id,
             rule_set_id=rule_set.id,
             rule_set_url=data.rule_set_url,
             custom_requirements=data.custom_requirements or [],
@@ -146,10 +148,14 @@ async def create_run_with_url_import(
 
 @router.get("/runs", response_model=list[AssessmentRunRead])
 def list_runs(
+    current_user: Annotated[User, Depends(get_current_active_user)],
     visible_only: bool = True,
     db: Session = Depends(get_db),
 ):
     stmt = select(AssessmentRun).order_by(AssessmentRun.created_at.desc())
+    # Default: restrict to current user's runs unless caller is superuser
+    if current_user and not current_user.is_superuser:
+        stmt = stmt.where(AssessmentRun.owner_user_id == current_user.id)
     if visible_only:
         # Hide preliminary runs that have not been started
         stmt = stmt.where(AssessmentRun.status.in_(["processing", "completed", "failed"]))
@@ -158,20 +164,32 @@ def list_runs(
 
 
 @router.get("/runs/{run_id}", response_model=AssessmentRunDetail)
-def get_run(run_id: int, db: Session = Depends(get_db)):
+def get_run(
+    run_id: int,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    db: Session = Depends(get_db),
+):
     run = db.get(AssessmentRun, run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Not found")
+    if (not current_user.is_superuser) and (run.owner_user_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Forbidden")
     # eager load applicants and documents
     _ = run.applicants  # relationships will be included via from_attributes
     return run
 
 
 @router.delete("/runs/{run_id}")
-def delete_run(run_id: int, db: Session = Depends(get_db)) -> dict[str, int]:
+def delete_run(
+    run_id: int,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    db: Session = Depends(get_db),
+) -> dict[str, int]:
     run = db.get(AssessmentRun, run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
+    if (not current_user.is_superuser) and (run.owner_user_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Forbidden")
     db.delete(run)
     db.commit()
     return {"deleted": run_id}
@@ -179,11 +197,14 @@ def delete_run(run_id: int, db: Session = Depends(get_db)) -> dict[str, int]:
 
 @router.delete("/runs")
 def delete_runs(
+    current_user: Annotated[User, Depends(get_current_active_user)],
     status: str | None = None,
     db: Session = Depends(get_db),
 ) -> dict[str, int]:
     # Danger: bulk delete. Intended for cleanup of preliminary runs.
     stmt = select(AssessmentRun)
+    if not current_user.is_superuser:
+        stmt = stmt.where(AssessmentRun.owner_user_id == current_user.id)
     if status:
         stmt = stmt.where(AssessmentRun.status == status)
     items = db.execute(stmt).scalars().all()
@@ -196,10 +217,17 @@ def delete_runs(
 
 
 @router.post("/runs/{run_id}/upload", response_model=AssessmentRunRead)
-async def upload_zip(run_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_zip(
+    run_id: int,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
     run = db.get(AssessmentRun, run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
+    if (not current_user.is_superuser) and (run.owner_user_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Forbidden")
 
     # Clear any previously uploaded applicants/documents for this run
     # so that a new upload replaces the dataset instead of appending.
@@ -275,6 +303,8 @@ async def update_run_rule_set(
     run = db.get(AssessmentRun, run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
+    if (not current_user.is_superuser) and (run.owner_user_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Forbidden")
     if not payload.rule_set_id and not payload.rule_set_url:
         raise HTTPException(status_code=400, detail="Either rule_set_id or rule_set_url must be provided")
 
@@ -308,10 +338,16 @@ async def update_run_rule_set(
 
 
 @router.post("/runs/{run_id}/start", response_model=AssessmentRunRead)
-def start_run(run_id: int, db: Session = Depends(get_db)):
+def start_run(
+    run_id: int,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    db: Session = Depends(get_db),
+):
     run = db.get(AssessmentRun, run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
+    if (not current_user.is_superuser) and (run.owner_user_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Forbidden")
     if not run.rule_set_id:
         raise HTTPException(status_code=400, detail="Rule set not set for this run")
     # For now, set to processing and rely on Celery pipeline stub
@@ -366,12 +402,18 @@ def set_run_agent_models(
 @router.get("/runs/{run_id}/logs")
 def get_run_logs(
     run_id: int,
+    current_user: Annotated[User, Depends(get_current_active_user)],
     limit: int = 200,
     applicant_id: int | None = None,
     agent: str | None = None,
     db: Session = Depends(get_db),
 ):
     """Return recent agent call logs for a run. No streaming; polling-friendly."""
+    run = db.get(AssessmentRun, run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if (not current_user.is_superuser) and (run.owner_user_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Forbidden")
     q = db.query(RunLog).filter(RunLog.run_id == run_id)
     if applicant_id:
         q = q.filter(RunLog.applicant_id == applicant_id)
@@ -407,6 +449,12 @@ def set_manual_decision(
     applicant = db.get(Applicant, applicant_id)
     if not applicant:
         raise HTTPException(status_code=404, detail="Applicant not found")
+    # Ownership check via applicant -> run
+    run = db.get(AssessmentRun, applicant.run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if current_user and (not current_user.is_superuser) and (run.owner_user_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Forbidden")
 
     gating = db.query(ApplicantGating).filter_by(applicant_id=applicant_id).one_or_none()
     if not gating:

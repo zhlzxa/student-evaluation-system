@@ -14,6 +14,8 @@ class AssessmentRun(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str | None] = mapped_column(String(256))
+    # Owner of this assessment run
+    owner_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
     rule_set_id: Mapped[int | None] = mapped_column(ForeignKey("admission_rule_sets.id", ondelete="SET NULL"))
     rule_set_url: Mapped[str | None] = mapped_column(String(1000))
     custom_requirements: Mapped[list[str] | None] = mapped_column(JSON)

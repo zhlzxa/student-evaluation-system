@@ -15,7 +15,7 @@ export function AppShell({ children }: PropsWithChildren) {
   
   const nav = useMemo(() => [
     { label: 'Home', icon: <HomeIcon />, href: '/assessments' },
-    { label: 'Metrics', icon: <InsightsIcon />, href: '/rules' },
+    { label: 'Rules', icon: <InsightsIcon />, href: '/rules' },
   ], []);
 
   const handleLogout = async () => {

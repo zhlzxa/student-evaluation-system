@@ -6,7 +6,7 @@ test.describe('Navigation', () => {
 
     // Test navigation to each page
     const navigationItems = [
-      { name: 'Dashboard', url: '/' },
+      { name: 'Home', url: '/assessments' },
       { name: 'New Assessment', url: '/assessments/new' },
       { name: 'Runs', url: '/assessments' },
       { name: 'Rules', url: '/rules' },
@@ -28,8 +28,8 @@ test.describe('Navigation', () => {
     await page.goto('/');
 
     // Navigation is always visible; verify items are present and clickable
-    await expect(page.getByText('Dashboard')).toBeVisible();
-    await page.getByText('Dashboard').click();
+    await expect(page.getByText('Home')).toBeVisible();
+    await page.getByText('Home').click();
   });
 
   test('should highlight current page in navigation', async ({ page }) => {

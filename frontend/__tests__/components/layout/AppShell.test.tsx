@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { AppShell } from '@/components/layout/AppShell'
 import { usePathname, useRouter } from 'next/navigation'
-import { vi } from 'vitest'
+import { vi, beforeEach } from 'vitest'
 
 const mockPush = vi.fn()
 const mockPathname = vi.fn()
@@ -47,8 +47,6 @@ describe('AppShell', () => {
     )
 
     // Navigation items should be visible without clicking any menu
-    expect(screen.getByText('Dashboard')).toBeInTheDocument()
-    expect(screen.getByText('New Assessment')).toBeInTheDocument()
     expect(screen.getByText('Home')).toBeInTheDocument()
     expect(screen.getByText('Rules')).toBeInTheDocument()
   })

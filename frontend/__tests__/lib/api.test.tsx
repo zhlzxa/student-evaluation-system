@@ -3,9 +3,16 @@ import { useApi } from '@/lib/api'
 import { useSession } from 'next-auth/react'
 import { vi, beforeEach, afterEach } from 'vitest'
 import { server } from '@/src/mocks/server'
+import { ToastProvider } from '@/components/providers/ToastProvider'
+import { ReactNode } from 'react'
 
 // Mock next-auth
 vi.mock('next-auth/react')
+
+// Wrapper component for testing
+function TestWrapper({ children }: { children: ReactNode }) {
+  return <ToastProvider>{children}</ToastProvider>
+}
 
 // Mock fetch
 const mockFetch = vi.fn()
@@ -43,7 +50,9 @@ describe('useApi', () => {
       json: () => Promise.resolve({ test: 'data' }),
     })
 
-    const { result } = renderHook(() => useApi())
+    const { result } = renderHook(() => useApi(), {
+      wrapper: TestWrapper
+    })
     const api = result.current
 
     await api('/test-endpoint')
@@ -71,7 +80,9 @@ describe('useApi', () => {
       json: () => Promise.resolve({ test: 'data' }),
     })
 
-    const { result } = renderHook(() => useApi())
+    const { result } = renderHook(() => useApi(), {
+      wrapper: TestWrapper
+    })
     const api = result.current
 
     await api('/test-endpoint')
@@ -98,7 +109,9 @@ describe('useApi', () => {
     const formData = new FormData()
     formData.append('test', 'value')
 
-    const { result } = renderHook(() => useApi())
+    const { result } = renderHook(() => useApi(), {
+      wrapper: TestWrapper
+    })
     const api = result.current
 
     await api('/upload', { method: 'POST', body: formData })
@@ -121,7 +134,9 @@ describe('useApi', () => {
       update: vi.fn(),
     })
 
-    const { result } = renderHook(() => useApi())
+    const { result } = renderHook(() => useApi(), {
+      wrapper: TestWrapper
+    })
     const api = result.current
 
     await api('/test-endpoint', {
