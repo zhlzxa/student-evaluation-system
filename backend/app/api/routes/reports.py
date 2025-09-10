@@ -34,7 +34,12 @@ def get_run_report(run_id: int, db: Session = Depends(get_db)):
             "evaluations": [
                 {"agent": e.agent_name, "score": e.score, "details": e.details} for e in evs
             ],
-            "gating": {"decision": g.decision if g else None, "reasons": g.reasons if g else []},
+            "gating": {
+                "decision": g.decision if g else None,
+                "reasons": g.reasons if g else [],
+                "manual_decision": g.manual_decision if g else None,
+                "manual_set_at": (g.manual_set_at.isoformat() if g and g.manual_set_at else None),
+            },
             "ranking": {"weighted_score": r.weighted_score if r else None, "final_rank": r.final_rank if r else None, "notes": r.notes if r else None},
         })
     return {

@@ -45,7 +45,7 @@ export function useApi() {
         cache: 'no-store',
       });
 
-      if (res.status === 401) {
+      if (res.status === 401 || res.status === 403) {
         await handleUnauthorized();
         throw new Error('Authentication required. Redirecting to login page.');
       }

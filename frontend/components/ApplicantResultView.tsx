@@ -19,6 +19,13 @@ import {
   Fade,
   Zoom,
   Badge,
+  Button,
+  ButtonGroup,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { 
   CheckCircle, 
@@ -37,6 +44,8 @@ import {
   Psychology,
   Assessment,
 } from "@mui/icons-material";
+import { useApi } from "@/lib/api";
+import { useToast } from "@/components/providers/ToastProvider";
 
 type EvaluationItem = {
   agent: string;
@@ -52,6 +61,8 @@ type ApplicantItem = {
   gating?: {
     decision?: string | null;
     reasons?: string[] | null;
+    manual_decision?: string | null;
+    manual_set_at?: string | null;
   } | null;
   ranking?: {
     weighted_score?: number | null;
@@ -433,16 +444,34 @@ function EvaluationCard({ item }: { item: EvaluationItem }) {
   );
 }
 
-export default function ApplicantResultView({ item }: { item: ApplicantItem }) {
+export default function ApplicantResultView({ item, onChanged }: { item: ApplicantItem, onChanged?: () => void | Promise<void> }) {
   const theme = useTheme();
   const name = item.display_name || item.folder;
   const decision = item.gating?.decision || "Pending";
   const reasons = item.gating?.reasons || [];
+  const manualDecision = item.gating?.manual_decision || null;
   const weighted = item.ranking?.weighted_score ?? null;
   const rank = item.ranking?.final_rank ?? null;
   const notes = item.ranking?.notes || "";
   const decisionNorm = (decision || "").toLowerCase();
   const isTerminal = decisionNorm === "accept" || decisionNorm === "pass" || decisionNorm === "reject" || decisionNorm === "fail";
+  const api = useApi();
+  const { addToast } = useToast();
+  const [confirmClearOpen, setConfirmClearOpen] = React.useState(false);
+
+  async function setManualDecision(decision: 'ACCEPT' | 'MIDDLE' | 'REJECT' | null) {
+    try {
+      const res = await api(`/assessments/applicants/${item.applicant_id}/manual-decision`, {
+        method: 'PUT',
+        body: JSON.stringify({ decision })
+      });
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+      addToast({ message: decision ? `Set ${decision}` : 'Cleared teacher decision', severity: 'success' });
+      await onChanged?.();
+    } catch (e: any) {
+      addToast({ message: e?.message || 'Operation failed', severity: 'error' });
+    }
+  }
 
   // Compute highlights from evaluations (if scores exist)
   const scored = (item.evaluations || []).filter((e) => typeof e.score === "number") as Array<Required<Pick<EvaluationItem, "agent" | "score">>>;
@@ -480,6 +509,7 @@ export default function ApplicantResultView({ item }: { item: ApplicantItem }) {
   })();
 
   return (
+    <>
     <Fade in={true} timeout={500}>
   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {/* Header Section */}
@@ -566,6 +596,33 @@ export default function ApplicantResultView({ item }: { item: ApplicantItem }) {
                       />
                     </Stack>
                   </Stack>
+                </Stack>
+                {/* Teacher Decision Controls */}
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  {manualDecision ? (
+                    <>
+                      <Chip
+                        label={`Teacher Decision: ${manualDecision}`}
+                        color={(() => {
+                          const md = (manualDecision || '').toLowerCase();
+                          if (md === 'accept') return 'success';
+                          if (md === 'reject') return 'error';
+                          if (md === 'middle') return 'warning';
+                          return 'default';
+                        })()}
+                        size="small"
+                      />
+                      <Tooltip title="Clear teacher decision">
+                        <Button color="secondary" size="small" onClick={() => setConfirmClearOpen(true)}>Undo</Button>
+                      </Tooltip>
+                    </>
+                  ) : (
+                    <ButtonGroup variant="contained" size="medium">
+                      <Tooltip title="Mark Accept"><Button color="success" onClick={() => setManualDecision('ACCEPT')}>ACCEPT</Button></Tooltip>
+                      <Tooltip title="Mark Middle"><Button color="warning" onClick={() => setManualDecision('MIDDLE')}>MIDDLE</Button></Tooltip>
+                      <Tooltip title="Mark Reject"><Button color="error" onClick={() => setManualDecision('REJECT')}>REJECT</Button></Tooltip>
+                    </ButtonGroup>
+                  )}
                 </Stack>
               </Stack>
 
@@ -785,5 +842,16 @@ export default function ApplicantResultView({ item }: { item: ApplicantItem }) {
       </Box>
   </Box>
     </Fade>
+    <Dialog open={confirmClearOpen} onClose={() => setConfirmClearOpen(false)}>
+      <DialogTitle>Confirm Undo</DialogTitle>
+      <DialogContent>
+        <Typography variant="body2">Are you sure you want to clear teacher decision?</Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setConfirmClearOpen(false)}>Cancel</Button>
+        <Button color="error" variant="contained" onClick={async () => { await setManualDecision(null); setConfirmClearOpen(false); }}>Clear</Button>
+      </DialogActions>
+    </Dialog>
+    </>
   );
 }

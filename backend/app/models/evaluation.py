@@ -27,6 +27,9 @@ class ApplicantGating(Base):
     applicant_id: Mapped[int] = mapped_column(ForeignKey("applicants.id", ondelete="CASCADE"), unique=True)
     decision: Mapped[str] = mapped_column(String(16), index=True)  # ACCEPT, MIDDLE, REJECT
     reasons: Mapped[list[str] | None] = mapped_column(JSON)
+    # Optional manual override set by teacher: ACCEPT, MIDDLE, REJECT
+    manual_decision: Mapped[str | None] = mapped_column(String(16), index=True, nullable=True)
+    manual_set_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 

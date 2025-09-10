@@ -1,7 +1,7 @@
 "use client";
 import { useParams, useRouter } from 'next/navigation';
 import { useApi } from '../../../../lib/api';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Alert, Box, Button, Stack, Typography, Container, Skeleton } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import EvaluationProcess from '../../../../components/EvaluationProcess';
@@ -16,16 +16,15 @@ export default function RunDetailPage() {
   const [evaluationData, setEvaluationData] = useState<any>(null);
   const [error, setError] = useState<string| null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     setError(null);
     const r = await api(`/assessments/runs/${runId}`);
     if (r.ok) setRun(await r.json()); else setError('Failed to load run');
-    // Load evaluation results for process steps
     const evalData = await api(`/reports/runs/${runId}`);
     if (evalData.ok) setEvaluationData(await evalData.json());
-  }
+  }, [api, runId]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { void load(); }, [load]);
 
   const items = evaluationData?.items || [];
   const accepted = items.filter((item: any) => {
@@ -71,7 +70,9 @@ export default function RunDetailPage() {
         <StatCard title="Rejected" value={rejected.length} subtitle={`of ${total} total`} color="error" percent={pct(rejected.length)} chipLabel={`${pct(rejected.length)}%`} />
       </Box>
       <Box>
-        <EvaluationProcess data={evaluationData} runId={runId} />
+        {evaluationData ? (
+          <EvaluationProcess data={evaluationData} runId={runId} onChanged={() => { void load(); }} />
+        ) : null}
       </Box>
       </Stack>
     </Container>

@@ -22,10 +22,20 @@ import {
   Select,
   MenuItem,
   TextField,
-  Menu
+  Menu,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  RadioGroup,
+  FormControlLabel,
+  Radio
 } from '@mui/material';
 import { CheckCircle, Cancel, Compare, EmojiEvents, Gavel, Visibility, MoreVert } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
+import { useApi } from '@/lib/api';
+import { useToast } from '@/components/providers/ToastProvider';
 
 interface EvaluationData {
   items: Array<{
@@ -35,6 +45,8 @@ interface EvaluationData {
     gating?: {
       decision: string;
       reasons: string[];
+      manual_decision?: string | null;
+      manual_set_at?: string | null;
     };
     ranking?: {
       weighted_score: number;
@@ -51,17 +63,38 @@ interface EvaluationData {
   }>;
 }
 
-export default function EvaluationProcess({ data, runId }: { data: EvaluationData; runId: number }) {
+export default function EvaluationProcess({ data, runId, onChanged }: { data: EvaluationData; runId: number; onChanged?: () => void | Promise<void> }) {
   if (!data) return null;
 
   const { items = [], pairwise = [] } = data;
   const router = useRouter();
+  const api = useApi();
+  const { addToast } = useToast();
   const [orderBy, setOrderBy] = React.useState<'score' | 'decision' | null>(null);
   const [order, setOrder] = React.useState<'asc' | 'desc'>('asc');
   const [decisionFilter, setDecisionFilter] = React.useState<'all' | 'accept' | 'middle' | 'reject'>('all');
   const [decisionMenuAnchor, setDecisionMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [scoreFrom, setScoreFrom] = React.useState<string>('');
   const [scoreTo, setScoreTo] = React.useState<string>('');
+  const [selectDialogOpen, setSelectDialogOpen] = React.useState(false);
+  const [selectApplicantId, setSelectApplicantId] = React.useState<number | null>(null);
+  const [selectedDecision, setSelectedDecision] = React.useState<'ACCEPT' | 'MIDDLE' | 'REJECT'>('ACCEPT');
+  const [confirmClearOpen, setConfirmClearOpen] = React.useState(false);
+  const [clearApplicantId, setClearApplicantId] = React.useState<number | null>(null);
+
+  async function setManualDecision(applicantId: number, decision: 'ACCEPT' | 'MIDDLE' | 'REJECT' | null) {
+    try {
+      const res = await api(`/assessments/applicants/${applicantId}/manual-decision`, {
+        method: 'PUT',
+        body: JSON.stringify({ decision }),
+      });
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+      addToast({ message: decision ? `Set ${decision}` : 'Cleared teacher decision', severity: 'success' });
+      await onChanged?.();
+    } catch (e: any) {
+      addToast({ message: e?.message || 'Operation failed', severity: 'error' });
+    }
+  }
 
   const getGatingColor = (decision: string) => {
     switch (decision?.toLowerCase()) {
@@ -115,6 +148,7 @@ export default function EvaluationProcess({ data, runId }: { data: EvaluationDat
     });
 
   return (
+    <>
     <Stack spacing={3}>
       {/* Combined Results Table: Rank, Applicant, Weighted Score, Notes, AI Decision, Actions */}
       <Card elevation={2}>
@@ -148,6 +182,7 @@ export default function EvaluationProcess({ data, runId }: { data: EvaluationDat
                     </TableSortLabel>
                   </TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Notes</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Teacher Decision</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', position: 'relative', pr: 6, '&:hover .decision-menu-btn': { opacity: 1, pointerEvents: 'auto' } }}>
                     <TableSortLabel
                       active={orderBy === 'decision'}
@@ -234,6 +269,27 @@ export default function EvaluationProcess({ data, runId }: { data: EvaluationDat
                           </Typography>
                         )}
                       </TableCell>
+                      <TableCell sx={{ py: 2, minWidth: 220 }}>
+                        {item.gating?.manual_decision ? (
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Chip
+                              label={item.gating.manual_decision}
+                              color={(() => {
+                                const md = (item.gating?.manual_decision || '').toLowerCase();
+                                if (md === 'accept') return 'success';
+                                if (md === 'reject') return 'error';
+                                if (md === 'middle') return 'warning';
+                                return 'default';
+                              })()}
+                              size="small"
+                              variant="outlined"
+                            />
+                            <Button size="small" color="secondary" onClick={() => { setClearApplicantId(item.applicant_id); setConfirmClearOpen(true); }}>Undo</Button>
+                          </Stack>
+                        ) : (
+                          <Button size="small" variant="outlined" onClick={() => { setSelectApplicantId(item.applicant_id); setSelectedDecision('ACCEPT'); setSelectDialogOpen(true); }}>Set</Button>
+                        )}
+                      </TableCell>
                       <TableCell sx={{ py: 2 }}>
                         <Chip
                           icon={getGatingIcon(decisionRaw)}
@@ -317,5 +373,54 @@ export default function EvaluationProcess({ data, runId }: { data: EvaluationDat
         </Card>
       )}
     </Stack>
+
+    {/* Select Decision Dialog */}
+    <Dialog open={selectDialogOpen} onClose={() => setSelectDialogOpen(false)}>
+      <DialogTitle>Select Teacher Decision</DialogTitle>
+      <DialogContent>
+        <RadioGroup
+          value={selectedDecision}
+          onChange={(e) => setSelectedDecision(e.target.value as 'ACCEPT' | 'MIDDLE' | 'REJECT')}
+        >
+          <FormControlLabel value="ACCEPT" control={<Radio />} label="ACCEPT" />
+          <FormControlLabel value="MIDDLE" control={<Radio />} label="MIDDLE" />
+          <FormControlLabel value="REJECT" control={<Radio />} label="REJECT" />
+        </RadioGroup>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setSelectDialogOpen(false)}>Cancel</Button>
+        <Button
+          variant="contained"
+          onClick={async () => {
+            if (selectApplicantId != null) {
+              await setManualDecision(selectApplicantId, selectedDecision);
+            }
+            setSelectDialogOpen(false);
+            setSelectApplicantId(null);
+          }}
+        >
+          Confirm
+        </Button>
+      </DialogActions>
+    </Dialog>
+
+    {/* Confirm Clear Dialog */}
+    <Dialog open={confirmClearOpen} onClose={() => setConfirmClearOpen(false)}>
+      <DialogTitle>Confirm Undo</DialogTitle>
+      <DialogContent>
+        <Typography variant="body2">Are you sure you want to clear teacher decision?</Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setConfirmClearOpen(false)}>Cancel</Button>
+        <Button color="error" variant="contained" onClick={async () => {
+          if (clearApplicantId != null) {
+            await setManualDecision(clearApplicantId, null);
+          }
+          setConfirmClearOpen(false);
+          setClearApplicantId(null);
+        }}>Clear</Button>
+      </DialogActions>
+    </Dialog>
+    </>
   );
 }

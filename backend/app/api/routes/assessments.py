@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -12,6 +12,7 @@ from app.db.session import get_db
 from app.api.dependencies import get_current_active_user
 from app.models.user import User
 from app.models.assessment import AssessmentRun, Applicant, ApplicantDocument
+from app.models.evaluation import ApplicantGating
 from app.models import AdmissionRuleSet
 from app.schemas.assessments import (
     AssessmentRunCreate,
@@ -390,3 +391,47 @@ def get_run_logs(
         }
         for it in items
     ]
+
+
+class ManualDecisionUpdate(BaseModel):
+    decision: Literal["ACCEPT", "MIDDLE", "REJECT", "accept", "middle", "reject", None] | None
+
+
+@router.put("/applicants/{applicant_id}/manual-decision")
+def set_manual_decision(
+    applicant_id: int,
+    payload: ManualDecisionUpdate,
+    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_active_user)] = None,
+):
+    applicant = db.get(Applicant, applicant_id)
+    if not applicant:
+        raise HTTPException(status_code=404, detail="Applicant not found")
+
+    gating = db.query(ApplicantGating).filter_by(applicant_id=applicant_id).one_or_none()
+    if not gating:
+        gating = ApplicantGating(applicant_id=applicant_id, decision="MIDDLE", reasons=[])
+        db.add(gating)
+        db.flush()
+
+    # Normalize decision and apply/clear
+    normalized: str | None
+    if payload.decision is None:
+        normalized = None
+    else:
+        val = str(payload.decision).strip().upper()
+        if val not in {"ACCEPT", "MIDDLE", "REJECT"}:
+            raise HTTPException(status_code=400, detail="Invalid decision. Use ACCEPT, MIDDLE, or REJECT, or null to clear.")
+        normalized = val
+
+    gating.manual_decision = normalized
+    gating.manual_set_at = datetime.utcnow() if normalized else None
+    db.add(gating)
+    db.commit()
+    db.refresh(gating)
+
+    return {
+        "applicant_id": applicant_id,
+        "manual_decision": gating.manual_decision,
+        "manual_set_at": gating.manual_set_at.isoformat() if gating.manual_set_at else None,
+    }

@@ -17,15 +17,13 @@ export default function ApplicantDetailNestedPage() {
   const [run, setRun] = useState<any>(null);
   const [report, setReport] = useState<any>(null);
 
-  useEffect(() => {
-    async function load() {
+  async function load() {
       const r = await api(`/assessments/runs/${runId}`);
       if (r.ok) setRun(await r.json());
       const rv = await api(`/reports/runs/${runId}`);
       if (rv.ok) setReport(await rv.json());
-    }
-    load();
-  }, [runId]);
+  }
+  useEffect(() => { load(); }, [runId]);
 
   const item = useMemo(() => {
     const items = report?.items || [];
@@ -79,7 +77,7 @@ export default function ApplicantDetailNestedPage() {
 
         <Paper sx={{ p: 2 }}>
           {item ? (
-            <ApplicantResultView item={item} />
+            <ApplicantResultView item={item} onChanged={load} />
           ) : (
             <Stack spacing={1}>
               <Skeleton variant="text" width={320} height={28} />
