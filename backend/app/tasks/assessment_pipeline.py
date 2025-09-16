@@ -239,6 +239,50 @@ def orchestrate_run(run_id: int) -> str:
             except Exception:
                 english_policy = None
 
+        # Process custom requirements through intelligent classification
+        if run.custom_requirements:
+            try:
+                from app.agents.custom_requirements_classifier import (
+                    classify_custom_requirements,
+                    merge_classified_requirements_with_checklists
+                )
+
+                logger.info(f"Starting custom requirements classification for run {run.id}")
+
+                # Run custom requirements classification asynchronously
+                classification_result = asyncio.run(
+                    classify_custom_requirements(
+                        custom_requirements=run.custom_requirements,
+                        run_id=run_id,
+                        model_override=run_agent_models.get("custom_requirements_classifier")
+                    )
+                )
+
+                # Merge classified custom requirements with existing checklists
+                original_checklists = checklists.copy()
+                checklists = merge_classified_requirements_with_checklists(
+                    original_checklists=original_checklists,
+                    classified_checklists=classification_result["classified_checklists"]
+                )
+
+                logger.info(f"Custom requirements classification completed for run {run.id}. "
+                          f"Classified {classification_result['total_classified']} requirements.")
+
+                # Log final checklist distribution
+                for agent_name, items in checklists.items():
+                    custom_items = [item for item in items if "[USER DEFINED]" in item]
+                    if custom_items:
+                        logger.info(f"Agent {agent_name} received {len(custom_items)} custom requirements")
+
+            except Exception as classification_error:
+                logger.error(f"Error during custom requirements classification: {str(classification_error)}")
+                from app.services.logging_service import log_agent_event
+                log_agent_event(run_id, "custom_requirements_classifier", "error",
+                              f"Classification failed, falling back to original behavior: {str(classification_error)}")
+                # Continue with original checklists if classification fails
+        else:
+            logger.info(f"No custom requirements to classify for run {run.id}")
+
         # Evaluate each applicant using intelligent document access
         for a in applicants:
             # Create a small text sample for country detection only

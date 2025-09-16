@@ -55,8 +55,9 @@ async def generate_checklists(page_text: str, custom_requirements: list[str] | N
             "degree_requirement_class": None,
         }
         if custom_requirements:
-            base["checklists"]["custom"] = custom_requirements
-            base["checklists"]["degree_agent"] += custom_requirements
+            # Custom requirements are now handled by the classifier agent in the pipeline
+            # Store them separately for reference but don't auto-assign to degree_agent
+            base["checklists"]["custom_requirements_raw"] = custom_requirements
         return base
     logging.debug("RuleParser raw output (first 500 chars): %s", str(result)[:500])
     # Return raw JSON if well-formed; otherwise wrap into a dict
@@ -93,12 +94,10 @@ async def generate_checklists(page_text: str, custom_requirements: list[str] | N
                 "academic_agent": [],
             })
             if custom_requirements:
-                # push customs into degree/background by default and also expose a custom bucket
+                # Custom requirements are now handled by the classifier agent in the pipeline
+                # Store them separately for reference
                 cj = parsed["checklists"]
-                cj.setdefault("degree_agent", [])
-                cj.setdefault("custom", [])
-                cj["degree_agent"] += custom_requirements
-                cj["custom"] += custom_requirements
+                cj["custom_requirements_raw"] = custom_requirements
             return parsed
     except Exception:
         logging.exception("Failed to parse RuleParser output as JSON")
@@ -118,8 +117,9 @@ async def generate_checklists(page_text: str, custom_requirements: list[str] | N
         "degree_requirement_class": None,
     }
     if custom_requirements:
-        base["checklists"]["custom"] = custom_requirements
-        base["checklists"]["degree_agent"] += custom_requirements
+        # Custom requirements are now handled by the classifier agent in the pipeline
+        # Store them separately for reference but don't auto-assign to degree_agent
+        base["checklists"]["custom_requirements_raw"] = custom_requirements
     return base
 
 
@@ -157,8 +157,9 @@ async def generate_checklists_debug(
             "degree_requirement_class": None,
         }
         if custom_requirements:
-            base["checklists"]["custom"] = custom_requirements
-            base["checklists"]["degree_agent"] += custom_requirements
+            # Custom requirements are now handled by the classifier agent in the pipeline
+            # Store them separately for reference
+            base["checklists"]["custom_requirements_raw"] = custom_requirements
         return base, "", ""
     logging.debug("RuleParser raw output (first 500 chars): %s", str(raw)[:500])
 
@@ -193,11 +194,10 @@ async def generate_checklists_debug(
                 "academic_agent": [],
             })
             if custom_requirements:
+                # Custom requirements are now handled by the classifier agent in the pipeline
+                # Store them separately for reference
                 cj = parsed["checklists"]
-                cj.setdefault("degree_agent", [])
-                cj.setdefault("custom", [])
-                cj["degree_agent"] += custom_requirements
-                cj["custom"] += custom_requirements
+                cj["custom_requirements_raw"] = custom_requirements
             return parsed, str(raw), candidate
     except Exception:
         logging.exception("Failed to parse RuleParser output as JSON (debug)")
@@ -216,7 +216,8 @@ async def generate_checklists_debug(
         "degree_requirement_class": None,
     }
     if custom_requirements:
-        base["checklists"]["custom"] = custom_requirements
-        base["checklists"]["degree_agent"] += custom_requirements
+        # Custom requirements are now handled by the classifier agent in the pipeline
+        # Store them separately for reference
+        base["checklists"]["custom_requirements_raw"] = custom_requirements
     return base, str(raw), candidate
 

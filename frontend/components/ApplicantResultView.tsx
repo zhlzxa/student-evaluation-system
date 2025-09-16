@@ -775,8 +775,12 @@ export default function ApplicantResultView({ item, onChanged }: { item: Applica
                   </Stack>
                 </Stack>
                 {/* Admission Tutor Decision Controls */}
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                  {manualDecision ? (
+                <Stack spacing={1} alignItems="flex-end">
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
+                    Admission Tutor Decision
+                  </Typography>
+                  <Stack direction="row" spacing={1.5} alignItems="center">
+                    {manualDecision ? (
                     <>
                       <Chip
                         label={`Admission Tutor Decision: ${manualDecision}`}
@@ -800,6 +804,7 @@ export default function ApplicantResultView({ item, onChanged }: { item: Applica
                       <Tooltip title="Mark Reject"><Button color="error" onClick={() => setManualDecision('REJECT')}>REJECT</Button></Tooltip>
                     </ButtonGroup>
                   )}
+                  </Stack>
                 </Stack>
               </Stack>
 

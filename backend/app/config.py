@@ -34,8 +34,8 @@ class Settings(BaseSettings):
     AZURE_BING_GROUNDING_CONNECTION_NAME: str | None = None
     
     # Supported models configuration
-    SUPPORTED_MODELS: str = "gpt-4o,o3-mini"
-    DEFAULT_MODEL: str = "gpt-4o"
+    SUPPORTED_MODELS: str = "gpt-4.1,o3-mini"
+    DEFAULT_MODEL: str = "gpt-4.1"
 
     # Storage
     STORAGE_DIR: str = "./storage"

@@ -377,7 +377,7 @@ def set_run_agent_models(
 ):
     """Set or update per-run agent model mapping.
 
-    Body: { "english": "gpt-4o", "degree": "o3-mini", ... }
+    Body: { "english": "gpt-4.1", "degree": "o3-mini", ... }
     """
     run = db.get(AssessmentRun, run_id)
     if not run:

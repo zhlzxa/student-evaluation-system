@@ -24,7 +24,7 @@ class AgentType(Enum):
 class ModelConfig:
     """Configuration for AI models per agent type."""
     agent_models: Dict[AgentType, str] = field(default_factory=dict)
-    default_model: str = "gpt-4o"
+    default_model: str = "gpt-4.1"
     
     def __post_init__(self):
         settings = get_settings()

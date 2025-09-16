@@ -47,7 +47,7 @@ class TestAssessmentRunModel:
     def test_assessment_run_with_agent_models(self, test_db_session):
         """Test assessment run with agent models configuration."""
         agent_models = {
-            "english": "gpt-4o",
+            "english": "gpt-4.1",
             "degree": "o3-mini",
             "academic": "gpt-4"
         }
@@ -77,6 +77,115 @@ class TestAssessmentRunModel:
         test_db_session.commit()
 
         assert assessment_run.custom_requirements == requirements
+
+    def test_assessment_run_custom_requirements_various_types(self, test_db_session):
+        """Test assessment run with various types of custom requirements."""
+        requirements = [
+            "Minimum GPA 3.5",
+            "2 years relevant work experience in software development",
+            "IELTS overall score 7.0 with no band below 6.5",
+            "Strong personal statement demonstrating motivation",
+            "At least one academic publication or research project",
+            "Proficiency in Python, Java, or C++ programming languages",
+            "Experience with machine learning frameworks (TensorFlow, PyTorch)"
+        ]
+
+        assessment_run = AssessmentRun(
+            name="Comprehensive Test Assessment",
+            status="created",
+            custom_requirements=requirements
+        )
+        test_db_session.add(assessment_run)
+        test_db_session.commit()
+
+        assert assessment_run.id is not None
+        assert assessment_run.custom_requirements == requirements
+        assert len(assessment_run.custom_requirements) == 7
+
+        # Verify specific requirements are preserved
+        assert "Minimum GPA 3.5" in assessment_run.custom_requirements
+        assert "IELTS overall score 7.0 with no band below 6.5" in assessment_run.custom_requirements
+        assert "Experience with machine learning frameworks (TensorFlow, PyTorch)" in assessment_run.custom_requirements
+
+    def test_assessment_run_custom_requirements_edge_cases(self, test_db_session):
+        """Test assessment run with edge case custom requirements."""
+        # Test with empty list
+        assessment_run1 = AssessmentRun(
+            name="Empty Requirements Test",
+            status="created",
+            custom_requirements=[]
+        )
+        test_db_session.add(assessment_run1)
+
+        # Test with None (should be allowed)
+        assessment_run2 = AssessmentRun(
+            name="None Requirements Test",
+            status="created",
+            custom_requirements=None
+        )
+        test_db_session.add(assessment_run2)
+
+        # Test with single requirement
+        assessment_run3 = AssessmentRun(
+            name="Single Requirement Test",
+            status="created",
+            custom_requirements=["Single custom requirement"]
+        )
+        test_db_session.add(assessment_run3)
+
+        test_db_session.commit()
+
+        assert assessment_run1.custom_requirements == []
+        assert assessment_run2.custom_requirements is None
+        assert assessment_run3.custom_requirements == ["Single custom requirement"]
+
+    def test_assessment_run_custom_requirements_with_special_characters(self, test_db_session):
+        """Test assessment run with custom requirements containing special characters."""
+        requirements = [
+            "GPA ≥ 3.5 (on 4.0 scale)",
+            "Experience: 2+ years in AI/ML",
+            "IELTS: 7.0+ overall, 6.5+ each band",
+            "Publications in top-tier venues (h-index ≥ 5)",
+            "Fluent in English & Mandarin",
+            "Portfolio URL: https://example.com/portfolio"
+        ]
+
+        assessment_run = AssessmentRun(
+            name="Special Characters Test",
+            status="created",
+            custom_requirements=requirements
+        )
+        test_db_session.add(assessment_run)
+        test_db_session.commit()
+
+        assert assessment_run.custom_requirements == requirements
+
+        # Verify special characters are preserved
+        assert "GPA ≥ 3.5 (on 4.0 scale)" in assessment_run.custom_requirements
+        assert "Experience: 2+ years in AI/ML" in assessment_run.custom_requirements
+        assert "Fluent in English & Mandarin" in assessment_run.custom_requirements
+
+    def test_assessment_run_with_agent_models_and_custom_requirements(self, test_db_session):
+        """Test assessment run with both agent models and custom requirements."""
+        requirements = ["Custom requirement 1", "Custom requirement 2"]
+        agent_models = {
+            "english": "gpt-4.1",
+            "degree": "o3-mini",
+            "custom_requirements_classifier": "gpt-4.1"
+        }
+
+        assessment_run = AssessmentRun(
+            name="Combined Features Test",
+            status="created",
+            custom_requirements=requirements,
+            agent_models=agent_models
+        )
+        test_db_session.add(assessment_run)
+        test_db_session.commit()
+
+        assert assessment_run.custom_requirements == requirements
+        assert assessment_run.agent_models == agent_models
+        assert assessment_run.agent_models["custom_requirements_classifier"] == "gpt-4.1"
 
     def test_assessment_run_default_status(self, test_db_session):
         """Test that default status is 'created'."""
