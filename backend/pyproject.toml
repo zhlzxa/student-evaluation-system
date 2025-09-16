@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "student-evaluation-system-backend"
+name = "student-admission-review-system-backend"
 version = "0.1.0"
-description = "UCL student application evaluation system backend"
+description = "UCL student application admission review system backend"
 authors = ["UCL Eval Team <dev@example.com>"]
 readme = "README.md"
 package-mode = false
@@ -38,6 +38,8 @@ mypy = "^1.11.2"
 types-redis = "^4.6.0.20240819"
 types-beautifulsoup4 = "^4.12.0.20240822"
 pytest = "^8.3.2"
+pytest-asyncio = "^0.23.5"
+httpx = "^0.27.2"
 
 [build-system]
 requires = ["poetry-core>=1.9.0"]

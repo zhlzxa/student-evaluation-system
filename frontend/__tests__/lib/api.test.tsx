@@ -1,13 +1,13 @@
 import { renderHook } from '@testing-library/react'
-import { useApi } from '@/lib/api'
-import { useSession } from 'next-auth/react'
-import { vi, beforeEach, afterEach } from 'vitest'
-import { server } from '@/src/mocks/server'
+import { vi, beforeEach, afterEach, describe, it, expect } from 'vitest'
 import { ToastProvider } from '@/components/providers/ToastProvider'
 import { ReactNode } from 'react'
 
-// Mock next-auth
-vi.mock('next-auth/react')
+// Mutable mock for useAuth
+const useAuthMock = vi.fn()
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => useAuthMock(),
+}))
 
 // Wrapper component for testing
 function TestWrapper({ children }: { children: ReactNode }) {
@@ -22,37 +22,25 @@ describe('useApi', () => {
   const originalEnv = process.env
 
   beforeEach(() => {
-    // Stop MSW server for these tests and use our manual mock
-    server.close()
     global.fetch = mockFetch
-    
     vi.clearAllMocks()
-    process.env = { ...originalEnv }
-    process.env.NEXT_PUBLIC_BACKEND_BASE_URL = 'http://localhost:8000'
+    process.env = { ...originalEnv, NEXT_PUBLIC_API_BASE_URL: 'http://localhost:8000' }
   })
 
   afterEach(() => {
     process.env = originalEnv
     global.fetch = originalFetch
-    // Restart MSW server after each test
-    server.listen()
   })
 
   it('makes API calls without token when not authenticated', async () => {
-    vi.mocked(useSession).mockReturnValue({
-      data: null,
-      status: 'unauthenticated',
-      update: vi.fn(),
-    })
-
     mockFetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ test: 'data' }),
     })
 
-    const { result } = renderHook(() => useApi(), {
-      wrapper: TestWrapper
-    })
+    useAuthMock.mockReturnValue({ token: null, logout: vi.fn() })
+    const { useApi } = await import('@/lib/api')
+    const { result } = renderHook(() => useApi(), { wrapper: TestWrapper })
     const api = result.current
 
     await api('/test-endpoint')
@@ -68,23 +56,13 @@ describe('useApi', () => {
     )
   })
 
-  it('makes API calls with token when authenticated', async () => {
-    vi.mocked(useSession).mockReturnValue({
-      data: { access_token: 'test-token' } as any,
-      status: 'authenticated',
-      update: vi.fn(),
-    })
+  it('adds Authorization header when token is present', async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({}) })
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ test: 'data' }),
-    })
-
-    const { result } = renderHook(() => useApi(), {
-      wrapper: TestWrapper
-    })
+    useAuthMock.mockReturnValue({ token: 'test-token', logout: vi.fn() })
+    const { useApi } = await import('@/lib/api')
+    const { result } = renderHook(() => useApi(), { wrapper: TestWrapper })
     const api = result.current
-
     await api('/test-endpoint')
 
     expect(mockFetch).toHaveBeenCalledWith(
@@ -100,18 +78,12 @@ describe('useApi', () => {
   })
 
   it('handles FormData correctly', async () => {
-    vi.mocked(useSession).mockReturnValue({
-      data: null,
-      status: 'unauthenticated',
-      update: vi.fn(),
-    })
-
     const formData = new FormData()
     formData.append('test', 'value')
 
-    const { result } = renderHook(() => useApi(), {
-      wrapper: TestWrapper
-    })
+    useAuthMock.mockReturnValue({ token: null, logout: vi.fn() })
+    const { useApi } = await import('@/lib/api')
+    const { result } = renderHook(() => useApi(), { wrapper: TestWrapper })
     const api = result.current
 
     await api('/upload', { method: 'POST', body: formData })
@@ -128,21 +100,13 @@ describe('useApi', () => {
   })
 
   it('merges custom headers correctly', async () => {
-    vi.mocked(useSession).mockReturnValue({
-      data: { access_token: 'test-token' } as any,
-      status: 'authenticated',
-      update: vi.fn(),
-    })
-
-    const { result } = renderHook(() => useApi(), {
-      wrapper: TestWrapper
-    })
+    useAuthMock.mockReturnValue({ token: 'test-token', logout: vi.fn() })
+    const { useApi } = await import('@/lib/api')
+    const { result } = renderHook(() => useApi(), { wrapper: TestWrapper })
     const api = result.current
 
     await api('/test-endpoint', {
-      headers: {
-        'Custom-Header': 'custom-value',
-      },
+      headers: { 'Custom-Header': 'custom-value' },
     })
 
     expect(mockFetch).toHaveBeenCalledWith(

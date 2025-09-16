@@ -66,8 +66,10 @@ def orchestrate_run(run_id: int) -> str:
                     result = analyze_layout_file(file_path)
                     if result.get("status") == "ok":
                         paras = result.get("paragraphs") or []
+                        tables = result.get("tables") or []
                         preview = "\n".join(paras)
-                        doc.text_preview = preview[:8000]
+                        doc.text_preview = preview
+                        doc.table_data = tables
                         db.add(doc)
                         db.commit()
             except Exception as e:

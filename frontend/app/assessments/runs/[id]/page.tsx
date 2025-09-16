@@ -53,7 +53,7 @@ export default function RunDetailPage() {
           Back
         </Button>
         {run ? (
-          <Typography variant="h5">{run.name || `Evaluation #${runId}`}</Typography>
+          <Typography variant="h5">{run.name || `Admission Review #${runId}`}</Typography>
         ) : (
           <Skeleton variant="text" width={320} height={36} />
         )}

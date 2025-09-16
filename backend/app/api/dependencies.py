@@ -9,14 +9,21 @@ from app.services.user_service import UserService
 from app.models.user import User
 
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)  # Don't auto-raise 401, let us handle it
 
 
 def get_current_user(
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
     db: Annotated[Session, Depends(get_db)]
 ) -> User:
     """Get current authenticated user."""
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authorization header missing",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     token = credentials.credentials
     token_data = verify_token(token)
     
@@ -59,7 +66,7 @@ def get_current_superuser(
 # Optional authentication (allows both authenticated and anonymous access)
 def get_optional_user(
     db: Annotated[Session, Depends(get_db)],
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials | None = Depends(security)
 ) -> User | None:
     """Get current user if authenticated, None otherwise."""
     if not credentials:

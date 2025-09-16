@@ -99,11 +99,21 @@ function getAgentIcon(agent: string) {
   return map[agent] || <Person fontSize="inherit" />;
 }
 
-function getScoreColor(score: number | null): 'success' | 'warning' | 'error' | 'default' {
+function getScoreColor(score: number | null | undefined): 'success' | 'warning' | 'error' | 'default' {
   if (score === null || score === undefined) return 'default';
   if (score >= 8) return 'success';
   if (score >= 5) return 'warning';
   return 'error';
+}
+
+// Custom color function for lighter yellow warning
+function getScoreColorValue(scoreColor: 'success' | 'warning' | 'error' | 'default', theme: any) {
+  if (scoreColor === 'warning') {
+    return '#FDD835'; // Light yellow instead of default warning orange
+  }
+  if (scoreColor === 'success') return theme.palette.success.main;
+  if (scoreColor === 'error') return theme.palette.error.main;
+  return theme.palette.grey[500];
 }
 
 function decisionColor(decision?: string | null):
@@ -171,6 +181,11 @@ function getFieldLabel(agent: string, key: string): string {
       missing_prerequisites: "Missing prerequisites",
       policy_source: "Policy source",
       evidence: "Evidence",
+      degrees: "Degrees",
+      degree_type: "Degree type",
+      field_of_study: "Field of study",
+      grade: "Grade/Result",
+      duration: "Duration",
     };
     return map[k] || defaultLabel(key);
   }
@@ -211,7 +226,7 @@ function KeyValueRows({ data, agent }: { data: Record<string, unknown>; agent: s
     return String(v);
   };
 
-  const SECTION_KEYS = new Set(["missing_prerequisites", "evidence", "papers", "policy_source"]);
+  const SECTION_KEYS = new Set(["missing_prerequisites", "evidence", "papers", "policy_source", "degrees", "highlights"]);
   const entries = Object.entries(data);
   const baseEntries = entries.filter(([k]) => !SECTION_KEYS.has(k.toLowerCase()));
 
@@ -223,14 +238,170 @@ function KeyValueRows({ data, agent }: { data: Record<string, unknown>; agent: s
   const missingList = toList((data as any).missing_prerequisites);
   const evidenceList = toList((data as any).evidence);
   const policySource = (data as any).policy_source as string | undefined;
+  const degreesList = Array.isArray((data as any).degrees) ? (data as any).degrees : [];
+  const papersList = Array.isArray((data as any).papers) ? (data as any).papers : [];
+  const highlightsList = toList((data as any).highlights);
+  const qs_rank = (data as any).qs_rank;
 
   const hasBase = baseEntries.length > 0;
   const hasSections = (missingList.length > 0 || evidenceList.length > 0 || policySource);
   return (
     <Box sx={{ mt: hasBase ? 1 : 0.5 }}>
+      {/* Show degrees first and prominently for degree agent */}
+      {degreesList.length > 0 && agent.toLowerCase() === 'degree' && (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, fontWeight: 600 }}>Educational Background</Typography>
+          <Stack spacing={1.5}>
+            {degreesList.map((degree: any, i: number) => (
+              <Box key={i} sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'background.paper', boxShadow: 1 }}>
+                <Stack spacing={1}>
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                    {degree.degree_type && degree.field_of_study
+                      ? `${degree.degree_type} in ${degree.field_of_study}`
+                      : degree.degree_type || degree.field_of_study || 'Degree'}
+                  </Typography>
+                  <Stack spacing={0.5}>
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                      <Box sx={{ flex: '0 0 120px' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 500, color: 'text.secondary' }}>Institution</Typography>
+                      </Box>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {degree.institution || 'Not specified'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                      <Box sx={{ flex: '0 0 120px' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 500, color: 'text.secondary' }}>Country</Typography>
+                      </Box>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {degree.country || 'Not specified'}
+                      </Typography>
+                    </Box>
+                    {qs_rank && (
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                        <Box sx={{ flex: '0 0 120px' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 500, color: 'text.secondary' }}>QS World Rank</Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {qs_rank}
+                        </Typography>
+                      </Box>
+                    )}
+                    {degree.grade && (
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                        <Box sx={{ flex: '0 0 120px' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 500, color: 'text.secondary' }}>Grade/Result</Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {degree.grade}
+                        </Typography>
+                      </Box>
+                    )}
+                    {degree.duration && (
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                        <Box sx={{ flex: '0 0 120px' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 500, color: 'text.secondary' }}>Duration</Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {degree.duration}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Stack>
+                </Stack>
+              </Box>
+            ))}
+          </Stack>
+          <Divider sx={{ my: 2 }} />
+        </Box>
+      )}
+
+      {/* Show papers first and prominently for academic agent */}
+      {papersList.length > 0 && agent.toLowerCase() === 'academic' && (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, fontWeight: 600 }}>Publications</Typography>
+          <Stack spacing={1.5}>
+            {papersList.map((paper: any, i: number) => (
+              <Box key={i} sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'background.paper', boxShadow: 1 }}>
+                <Stack spacing={1}>
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                    {paper.title || `Publication ${i + 1}`}
+                  </Typography>
+                  <Stack spacing={0.5}>
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                      <Box sx={{ flex: '0 0 120px' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 500, color: 'text.secondary' }}>Venue</Typography>
+                      </Box>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {paper.venue || 'Not specified'}
+                      </Typography>
+                    </Box>
+                    {paper.tier && (
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                        <Box sx={{ flex: '0 0 120px' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 500, color: 'text.secondary' }}>Tier/Quality</Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {paper.tier}
+                        </Typography>
+                      </Box>
+                    )}
+                    {paper.year && (
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                        <Box sx={{ flex: '0 0 120px' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 500, color: 'text.secondary' }}>Year</Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {paper.year}
+                        </Typography>
+                      </Box>
+                    )}
+                    {paper.authors && (
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                        <Box sx={{ flex: '0 0 120px' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 500, color: 'text.secondary' }}>Authors</Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {paper.authors}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Stack>
+                </Stack>
+              </Box>
+            ))}
+          </Stack>
+          <Divider sx={{ my: 2 }} />
+        </Box>
+      )}
+
+      {/* Show experience highlights first and prominently for experience agent */}
+      {highlightsList.length > 0 && agent.toLowerCase() === 'experience' && (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, fontWeight: 600 }}>Work Experience</Typography>
+          <Stack spacing={1.5}>
+            {highlightsList.map((highlight: string, i: number) => (
+              <Box key={i} sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'background.paper', boxShadow: 1 }}>
+                <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+                  {highlight}
+                </Typography>
+              </Box>
+            ))}
+          </Stack>
+          <Divider sx={{ my: 2 }} />
+        </Box>
+      )}
+
       {hasBase && (
         <Stack spacing={1.25}>
-        {baseEntries.map(([key, value]) => (
+        {baseEntries.filter(([key]) => {
+          // For degree agent, hide redundant fields that are already shown in Educational Background
+          if (agent.toLowerCase() === 'degree' && degreesList.length > 0) {
+            const redundantFields = ['country', 'institution', 'qs_rank'];
+            return !redundantFields.includes(key.toLowerCase());
+          }
+          return true;
+        }).map(([key, value]) => (
           <Box key={key} sx={{ display: 'flex', gap: 2, my: 0.25, alignItems: 'flex-start' }}>
             <Box sx={{ flex: '0 0 140px' }}>
               <Typography color="text.secondary" sx={{ fontSize: '0.75rem', fontWeight: 500, lineHeight: 1.4, mt: 0.25 }}>{getFieldLabel(agent, key)}</Typography>
@@ -361,24 +532,30 @@ function KeyValueRows({ data, agent }: { data: Record<string, unknown>; agent: s
         </Box>
       )}
 
-      {policySource && (
-        <>
-          <Divider sx={{ my: 2 }} />
-          <Typography variant="body2" color="text.secondary">{policySource}</Typography>
-        </>
-                          )}
+
                         </Box>
                       );
                     }
 
 function ScoreChip({ score }: { score: number | null | undefined }) {
-  const getColor = (s: number | null | undefined): 'success' | 'warning' | 'error' | 'default' => {
-    if (s === null || s === undefined) return 'default';
-    if (s >= 8) return 'success';
-    if (s >= 5) return 'warning';
-    return 'error';
-  };
-  return <Chip label={`Score: ${score ?? 'N/A'}`} color={getColor(score)} size="small" />;
+  const theme = useTheme();
+  const scoreColor = getScoreColor(score);
+  const colorValue = getScoreColorValue(scoreColor, theme);
+
+  return (
+    <Chip
+      label={`Score: ${score ?? 'N/A'}`}
+      size="small"
+      sx={{
+        backgroundColor: scoreColor === 'default' ? undefined : alpha(colorValue, 0.15),
+        color: scoreColor === 'default' ? undefined : colorValue,
+        borderColor: scoreColor === 'default' ? undefined : alpha(colorValue, 0.5),
+        ...(scoreColor !== 'default' && {
+          border: `1px solid ${alpha(colorValue, 0.5)}`
+        })
+      }}
+    />
+  );
 }
 
 function EvaluationCard({ item }: { item: EvaluationItem }) {
@@ -408,7 +585,7 @@ function EvaluationCard({ item }: { item: EvaluationItem }) {
           border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
           position: 'relative',
           overflow: 'hidden',
-          borderLeft: `4px solid ${(theme.palette as any)[scoreColor === 'default' ? 'grey' : scoreColor].main}`,
+          borderLeft: `4px solid ${getScoreColorValue(scoreColor, theme)}`,
           width: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -416,7 +593,7 @@ function EvaluationCard({ item }: { item: EvaluationItem }) {
       >
         <CardHeader
           avatar={
-            <Avatar sx={{ bgcolor: alpha((theme.palette as any)[scoreColor === 'default' ? 'grey' : scoreColor].main, 0.15), color: (theme.palette as any)[scoreColor === 'default' ? 'grey' : scoreColor].main }}>
+            <Avatar sx={{ bgcolor: alpha(getScoreColorValue(scoreColor, theme), 0.15), color: getScoreColorValue(scoreColor, theme) }}>
               {getAgentIcon(item.agent)}
                   </Avatar>
                 }
@@ -466,7 +643,7 @@ export default function ApplicantResultView({ item, onChanged }: { item: Applica
         body: JSON.stringify({ decision })
       });
       if (!res.ok) throw new Error(`API error ${res.status}`);
-      addToast({ message: decision ? `Set ${decision}` : 'Cleared teacher decision', severity: 'success' });
+      addToast({ message: decision ? `Set ${decision}` : 'Cleared admission tutor decision', severity: 'success' });
       await onChanged?.();
     } catch (e: any) {
       addToast({ message: e?.message || 'Operation failed', severity: 'error' });
@@ -500,7 +677,7 @@ export default function ApplicantResultView({ item, onChanged }: { item: Applica
   const getMainColor = (c: "default" | "success" | "error" | "warning") => {
     if (c === 'success') return theme.palette.success.main;
     if (c === 'error') return theme.palette.error.main;
-    if (c === 'warning') return theme.palette.warning.main;
+    if (c === 'warning') return '#FDD835'; // Light yellow instead of default warning orange
     return theme.palette.grey[500];
   };
   const headerBackground = (() => {
@@ -597,12 +774,12 @@ export default function ApplicantResultView({ item, onChanged }: { item: Applica
                     </Stack>
                   </Stack>
                 </Stack>
-                {/* Teacher Decision Controls */}
+                {/* Admission Tutor Decision Controls */}
                 <Stack direction="row" spacing={1.5} alignItems="center">
                   {manualDecision ? (
                     <>
                       <Chip
-                        label={`Teacher Decision: ${manualDecision}`}
+                        label={`Admission Tutor Decision: ${manualDecision}`}
                         color={(() => {
                           const md = (manualDecision || '').toLowerCase();
                           if (md === 'accept') return 'success';
@@ -612,7 +789,7 @@ export default function ApplicantResultView({ item, onChanged }: { item: Applica
                         })()}
                         size="small"
                       />
-                      <Tooltip title="Clear teacher decision">
+                      <Tooltip title="Clear admission tutor decision">
                         <Button color="secondary" size="small" onClick={() => setConfirmClearOpen(true)}>Undo</Button>
                       </Tooltip>
                     </>
@@ -789,7 +966,7 @@ export default function ApplicantResultView({ item, onChanged }: { item: Applica
         <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
           <Analytics color="primary" fontSize="large" />
           <Typography variant="h5" fontWeight={700} color="text.primary">
-            Detailed Evaluations
+            Detailed Admission Reviews
           </Typography>
         </Stack>
         {/* Masonry-style two column layout: fills vertical gaps by using CSS columns */}
@@ -828,10 +1005,10 @@ export default function ApplicantResultView({ item, onChanged }: { item: Applica
                 <CardContent>
                   <Analytics sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
                   <Typography variant="h6" color="text.secondary" gutterBottom>
-                    No Evaluations Available
+                    No Admission Reviews Available
                   </Typography>
                   <Typography variant="body2" color="text.disabled">
-                    This applicant hasn&apos;t been evaluated yet.
+                    This applicant hasn&apos;t been reviewed yet.
                   </Typography>
                 </CardContent>
               </Card>
@@ -845,7 +1022,7 @@ export default function ApplicantResultView({ item, onChanged }: { item: Applica
     <Dialog open={confirmClearOpen} onClose={() => setConfirmClearOpen(false)}>
       <DialogTitle>Confirm Undo</DialogTitle>
       <DialogContent>
-        <Typography variant="body2">Are you sure you want to clear teacher decision?</Typography>
+        <Typography variant="body2">Are you sure you want to clear admission tutor decision?</Typography>
       </DialogContent>
       <DialogActions>
         <Button onClick={() => setConfirmClearOpen(false)}>Cancel</Button>

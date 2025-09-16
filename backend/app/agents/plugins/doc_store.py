@@ -43,7 +43,8 @@ class DocStorePlugin:
                     "content_type": doc.content_type,
                     "size_bytes": doc.size_bytes,
                     "rel_path": doc.rel_path,
-                    "preview": (doc.text_preview or "")[:200] + "..." if doc.text_preview and len(doc.text_preview) > 200 else doc.text_preview or ""
+                    "preview": (doc.text_preview or "")[:200] + "..." if doc.text_preview and len(doc.text_preview) > 200 else doc.text_preview or "",
+                    "has_tables": bool(doc.table_data)
                 }
                 doc_list.append(doc_info)
             
@@ -133,6 +134,33 @@ class DocStorePlugin:
         finally:
             db.close()
 
+    @kernel_function(description="Read table data from a specific document.")
+    def read_document_tables(
+        self,
+        doc_id: Annotated[int, "Document ID from list_documents()"],
+    ) -> Annotated[str, "Table data from the document in JSON format"]:
+        """Read table data extracted from a document."""
+        db = SessionLocal()
+        try:
+            doc = db.query(ApplicantDocument).filter_by(
+                id=doc_id,
+                applicant_id=self.applicant_id
+            ).first()
+
+            if not doc:
+                return "Document not found or access denied."
+
+            if not doc.table_data:
+                return "No table data available for this document."
+
+            import json
+            return json.dumps({
+                "filename": doc.original_filename,
+                "tables": doc.table_data
+            }, indent=2)
+        finally:
+            db.close()
+
     @kernel_function(description="Search for specific keywords or patterns within all applicant documents.")
     def search_documents(
         self,
@@ -167,6 +195,54 @@ class DocStorePlugin:
                     if len(results) >= max_results:
                         break
             
+            import json
+            return json.dumps(results, indent=2)
+        finally:
+            db.close()
+
+    @kernel_function(description="Search for specific content within table data across all documents.")
+    def search_tables(
+        self,
+        query: Annotated[str, "Search terms or keywords to find in tables"],
+        max_results: Annotated[int, "Maximum number of results to return"] = 10,
+    ) -> Annotated[str, "Table search results with document context"]:
+        """Search for specific content within table data."""
+        db = SessionLocal()
+        try:
+            docs = db.query(ApplicantDocument).filter_by(applicant_id=self.applicant_id).all()
+
+            results = []
+            query_lower = query.lower()
+
+            for doc in docs:
+                if not doc.table_data:
+                    continue
+
+                # Search within table data
+                for table_idx, table in enumerate(doc.table_data):
+                    if isinstance(table, list):
+                        # Convert table to searchable text
+                        table_text = ""
+                        for row in table:
+                            if isinstance(row, list):
+                                table_text += " ".join(str(cell) for cell in row) + " "
+
+                        if query_lower in table_text.lower():
+                            results.append({
+                                "doc_id": doc.id,
+                                "filename": doc.original_filename,
+                                "doc_type": doc.doc_type,
+                                "table_index": table_idx,
+                                "table_data": table[:5] if len(table) > 5 else table,  # First 5 rows
+                                "note": "Showing first 5 rows. Use read_document_tables() for complete data."
+                            })
+
+                            if len(results) >= max_results:
+                                break
+
+                if len(results) >= max_results:
+                    break
+
             import json
             return json.dumps(results, indent=2)
         finally:

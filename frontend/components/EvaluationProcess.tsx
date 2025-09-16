@@ -17,12 +17,8 @@ import {
   Card,
   CardContent,
   IconButton,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  TextField,
   Menu,
+  MenuItem,
   Button,
   Dialog,
   DialogTitle,
@@ -32,7 +28,7 @@ import {
   FormControlLabel,
   Radio
 } from '@mui/material';
-import { CheckCircle, Cancel, Compare, EmojiEvents, Gavel, Visibility, MoreVert } from '@mui/icons-material';
+import { CheckCircle, Cancel, Compare, Gavel, Visibility, MoreVert } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useApi } from '@/lib/api';
 import { useToast } from '@/components/providers/ToastProvider';
@@ -64,9 +60,6 @@ interface EvaluationData {
 }
 
 export default function EvaluationProcess({ data, runId, onChanged }: { data: EvaluationData; runId: number; onChanged?: () => void | Promise<void> }) {
-  if (!data) return null;
-
-  const { items = [], pairwise = [] } = data;
   const router = useRouter();
   const api = useApi();
   const { addToast } = useToast();
@@ -74,13 +67,15 @@ export default function EvaluationProcess({ data, runId, onChanged }: { data: Ev
   const [order, setOrder] = React.useState<'asc' | 'desc'>('asc');
   const [decisionFilter, setDecisionFilter] = React.useState<'all' | 'accept' | 'middle' | 'reject'>('all');
   const [decisionMenuAnchor, setDecisionMenuAnchor] = React.useState<null | HTMLElement>(null);
-  const [scoreFrom, setScoreFrom] = React.useState<string>('');
-  const [scoreTo, setScoreTo] = React.useState<string>('');
   const [selectDialogOpen, setSelectDialogOpen] = React.useState(false);
   const [selectApplicantId, setSelectApplicantId] = React.useState<number | null>(null);
   const [selectedDecision, setSelectedDecision] = React.useState<'ACCEPT' | 'MIDDLE' | 'REJECT'>('ACCEPT');
   const [confirmClearOpen, setConfirmClearOpen] = React.useState(false);
   const [clearApplicantId, setClearApplicantId] = React.useState<number | null>(null);
+
+  if (!data) return null;
+
+  const { items = [], pairwise = [] } = data;
 
   async function setManualDecision(applicantId: number, decision: 'ACCEPT' | 'MIDDLE' | 'REJECT' | null) {
     try {
@@ -89,7 +84,7 @@ export default function EvaluationProcess({ data, runId, onChanged }: { data: Ev
         body: JSON.stringify({ decision }),
       });
       if (!res.ok) throw new Error(`API error ${res.status}`);
-      addToast({ message: decision ? `Set ${decision}` : 'Cleared teacher decision', severity: 'success' });
+      addToast({ message: decision ? `Set ${decision}` : 'Cleared admission tutor decision', severity: 'success' });
       await onChanged?.();
     } catch (e: any) {
       addToast({ message: e?.message || 'Operation failed', severity: 'error' });
@@ -129,9 +124,6 @@ export default function EvaluationProcess({ data, runId, onChanged }: { data: Ev
     .filter((item) => {
       const d = decisionKey(item.gating?.decision || '');
       if (decisionFilter !== 'all' && d !== decisionFilter) return false;
-      const s = item.ranking?.weighted_score ?? null;
-      if (scoreFrom !== '' && s !== null && s < Number(scoreFrom)) return false;
-      if (scoreTo !== '' && s !== null && s > Number(scoreTo)) return false;
       return true;
     })
     .sort((a, b) => {
@@ -156,11 +148,11 @@ export default function EvaluationProcess({ data, runId, onChanged }: { data: Ev
           <Stack direction="row" alignItems="center" spacing={1} mb={2}>
             <Gavel color="primary" />
             <Typography variant="h6">
-              Evaluation Results
+              Admission Review Results
             </Typography>
           </Stack>
           <Typography variant="body2" color="text.secondary" mb={2}>
-            Hint: ACCEPT and REJECT candidates are excluded from scoring and ranking. MIDDLE candidates' ranks may be adjusted based on pairwise comparison results.
+            Hint: ACCEPT and REJECT candidates are excluded from scoring and ranking. MIDDLE candidates&apos; ranks may be adjusted based on pairwise comparison results.
           </Typography>
 
           {/* Filters */}
@@ -182,7 +174,7 @@ export default function EvaluationProcess({ data, runId, onChanged }: { data: Ev
                     </TableSortLabel>
                   </TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Notes</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Teacher Decision</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Admission Tutor Decision</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', position: 'relative', pr: 6, '&:hover .decision-menu-btn': { opacity: 1, pointerEvents: 'auto' } }}>
                     <TableSortLabel
                       active={orderBy === 'decision'}
@@ -376,7 +368,7 @@ export default function EvaluationProcess({ data, runId, onChanged }: { data: Ev
 
     {/* Select Decision Dialog */}
     <Dialog open={selectDialogOpen} onClose={() => setSelectDialogOpen(false)}>
-      <DialogTitle>Select Teacher Decision</DialogTitle>
+      <DialogTitle>Select Admission Tutor Decision</DialogTitle>
       <DialogContent>
         <RadioGroup
           value={selectedDecision}
@@ -408,7 +400,7 @@ export default function EvaluationProcess({ data, runId, onChanged }: { data: Ev
     <Dialog open={confirmClearOpen} onClose={() => setConfirmClearOpen(false)}>
       <DialogTitle>Confirm Undo</DialogTitle>
       <DialogContent>
-        <Typography variant="body2">Are you sure you want to clear teacher decision?</Typography>
+        <Typography variant="body2">Are you sure you want to clear admission tutor decision?</Typography>
       </DialogContent>
       <DialogActions>
         <Button onClick={() => setConfirmClearOpen(false)}>Cancel</Button>

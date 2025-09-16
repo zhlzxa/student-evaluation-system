@@ -52,6 +52,7 @@ class ApplicantDocument(Base):
     content_type: Mapped[str | None] = mapped_column(String(128))
     size_bytes: Mapped[int | None] = mapped_column(BigInteger)
     text_preview: Mapped[str | None] = mapped_column(Text())
+    table_data: Mapped[list[Any] | None] = mapped_column(JSON)
     doc_type: Mapped[str | None] = mapped_column(String(64))
 
     applicant: Mapped[Applicant] = relationship(back_populates="documents")

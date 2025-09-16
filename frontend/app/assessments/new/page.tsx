@@ -115,20 +115,6 @@ export default function NewAssessmentPage() {
     void bind();
   }, [ruleSource, ruleSetId, ruleSetUrl, customItems, creating, run, api]);
 
-  // Create run on demand (via Create button)
-  const createRun = async () => {
-    if (run || creating) return;
-    try {
-      setCreating(true);
-      setError(null);
-      const resp = await api('/assessments/runs', { method: 'POST', body: JSON.stringify({}) });
-      if (!resp.ok) { setError('Failed to create run'); return; }
-      const created = await resp.json();
-      setRun(created);
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const handleFileUpload = async (file: File) => {
     if (!run) return;
@@ -228,7 +214,7 @@ export default function NewAssessmentPage() {
               New Admission Review
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Select a rule set, upload a ZIP, and start the evaluation
+              Select programme criteria, upload a ZIP, and start the evaluation
             </Typography>
           </Box>
         </Box>
@@ -263,7 +249,7 @@ export default function NewAssessmentPage() {
                     }
                   }}
                 >
-                  <ToggleButton value="existing"><Gavel sx={{ mr: 1 }} />Use Rule Set</ToggleButton>
+                  <ToggleButton value="existing"><Gavel sx={{ mr: 1 }} />Use Programme Criteria</ToggleButton>
                   <ToggleButton value="url"><LinkIcon sx={{ mr: 1 }} />Programme URL</ToggleButton>
                 </ToggleButtonGroup>
               </Paper>
@@ -274,15 +260,15 @@ export default function NewAssessmentPage() {
 
             <Collapse in={ruleSource === 'existing'} mountOnEnter unmountOnExit>
               <FormControl required sx={{ maxWidth: 560 }} size="small" disabled={!((ruleSets.data||[]).length)}>
-                <InputLabel id="rule-set-select-label" shrink>Rule Set</InputLabel>
+                <InputLabel id="rule-set-select-label" shrink>Programme Criteria</InputLabel>
                 <Select
                   labelId="rule-set-select-label"
-                  label="Rule Set"
+                  label="Programme Criteria"
                   value={ruleSetId ?? ''}
                   onChange={(e)=> setRuleSetId(Number(e.target.value))}
                   displayEmpty
                   renderValue={(value: any) => {
-                    if (value === '' || value === undefined || value === null) return 'Select a rule set';
+                    if (value === '' || value === undefined || value === null) return 'Select programme criteria';
                     const found = (ruleSets.data||[]).find((rs: any)=> rs.id === value);
                     return found?.name || '';
                   }}
@@ -292,7 +278,7 @@ export default function NewAssessmentPage() {
                   ))}
                 </Select>
                 <FormHelperText>
-                  {((ruleSets.data||[]).length) ? 'Required when using an existing rule set' : 'No rule sets available'}
+                  {((ruleSets.data||[]).length) ? 'Required when using existing programme criteria' : 'No programme criteria available'}
                 </FormHelperText>
               </FormControl>
             </Collapse>
@@ -439,7 +425,7 @@ export default function NewAssessmentPage() {
               Each applicant may take around 2 minutes to review.
             </Typography>
             <Typography variant="body2" color="text.secondary" align="center">
-              Please be patient. You'll be redirected to the admission reviews page shortly.
+              Please be patient. You&apos;ll be redirected to the admission reviews page shortly.
             </Typography>
           </Stack>
         </DialogContent>

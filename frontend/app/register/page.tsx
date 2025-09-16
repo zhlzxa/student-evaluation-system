@@ -1,11 +1,12 @@
 "use client";
 import { Box, Button, Paper, Stack, TextField, Typography, Alert } from '@mui/material';
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -17,7 +18,7 @@ export default function RegisterPage() {
     setError(null);
     
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/auth/register`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/register`, {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, full_name: fullName, invite_code: invite }),
@@ -30,14 +31,15 @@ export default function RegisterPage() {
         return;
       }
       
-      // auto login after successful registration
-      const si = await signIn('credentials', { redirect: false, email, password });
-      if (si?.ok) {
-        router.push('/');
-      } else {
+      // Auto login after successful registration
+      try {
+        await login(email, password);
+        // Redirect will be handled by the login function
+      } catch {
         setError('Registration successful, but auto login failed. Please login manually.');
+        router.push('/login');
       }
-    } catch (error) {
+    } catch {
       setError('Network error. Please check your connection and try again.');
     }
   };

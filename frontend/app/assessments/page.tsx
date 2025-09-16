@@ -30,12 +30,11 @@ import { Assessment, Visibility, Schedule, CheckCircle, HourglassEmpty, Cancel, 
 import { formatLocalDateTime } from '../../lib/date';
 import { useRouter } from 'next/navigation';
 
-export default function EvaluationHistoryPage() {
+export default function AdmissionReviewHistoryPage() {
   const api = useApi();
   const router = useRouter();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [evaluationToDelete, setEvaluationToDelete] = useState<any>(null);
-  const [creating, setCreating] = useState(false);
+  const [admissionReviewToDelete, setAdmissionReviewToDelete] = useState<any>(null);
   const [orderBy, setOrderBy] = useState<'status' | 'started' | null>('started');
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -50,15 +49,15 @@ export default function EvaluationHistoryPage() {
   });
 
   const handleDeleteClick = (evaluation: any) => {
-    setEvaluationToDelete(evaluation);
+    setAdmissionReviewToDelete(evaluation);
     setDeleteDialogOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (!evaluationToDelete) return;
+    if (!admissionReviewToDelete) return;
     
     try {
-      const response = await api(`/assessments/runs/${evaluationToDelete.id}`, {
+      const response = await api(`/assessments/runs/${admissionReviewToDelete.id}`, {
         method: 'DELETE',
       });
       
@@ -66,7 +65,7 @@ export default function EvaluationHistoryPage() {
         // Refresh the data after successful deletion
         refetch();
         setDeleteDialogOpen(false);
-        setEvaluationToDelete(null);
+        setAdmissionReviewToDelete(null);
       } else {
         console.error('Failed to delete evaluation');
       }
@@ -77,7 +76,7 @@ export default function EvaluationHistoryPage() {
 
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
-    setEvaluationToDelete(null);
+    setAdmissionReviewToDelete(null);
   };
   const getStatusIcon = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -118,12 +117,6 @@ export default function EvaluationHistoryPage() {
   const CANONICAL_STATUS_ORDER: Array<'processing'|'completed'|'failed'> = ['processing','completed','failed'];
   const displayStatus = (c: string) => c; // keep backend naming
 
-  // 统计各规范状态数量（用于后续可扩展显示计数或禁用）
-  const statusCounts = (Array.isArray(data) ? data : []).reduce((acc: Record<string, number>, e: any) => {
-    const c = canonicalizeStatus(e.status || '');
-    acc[c] = (acc[c] || 0) + 1;
-    return acc;
-  }, {});
 
   const filteredAndSorted = (Array.isArray(data) ? data : [])
     .filter((evaluation: any) => {
@@ -321,7 +314,7 @@ export default function EvaluationHistoryPage() {
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="delete-dialog-description">
-            Are you sure you want to delete {evaluationToDelete?.name || `Admission Review #${evaluationToDelete?.id}`}? 
+            Are you sure you want to delete {admissionReviewToDelete?.name || `Admission Review #${admissionReviewToDelete?.id}`}? 
             This action cannot be undone and will permanently remove all associated data.
           </DialogContentText>
         </DialogContent>

@@ -20,17 +20,3 @@ class DegreeScorePlugin:
     ) -> Annotated[bool, "True if observed >= required"]:
         return float(observed_percent) >= float(min_required_percent)
 
-    @kernel_function(description="Map percent scale to a 0-10 score using a simple policy.")
-    def percent_to_score(
-        self,
-        observed_percent: Annotated[float, "Observed overall percent (0-100)"],
-    ) -> Annotated[int, "Score from 0 to 10"]:
-        p = float(observed_percent)
-        if p >= 95:
-            return 10
-        if p >= 90:
-            return 6
-        if p >= 85:
-            return 4
-        return 0
-

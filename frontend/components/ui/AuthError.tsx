@@ -1,7 +1,6 @@
 "use client";
 import { Box, Button, Typography, Alert, Container } from '@mui/material';
-import { useRouter } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AuthErrorProps {
   error?: string;
@@ -9,16 +8,15 @@ interface AuthErrorProps {
   message?: string;
 }
 
-export function AuthError({ 
+export function AuthError({
   error = 'authentication_error',
   title = 'Authentication Error',
   message = 'There was a problem with authentication. Please try logging in again.'
 }: AuthErrorProps) {
-  const router = useRouter();
+  const { logout } = useAuth();
 
-  const handleLoginRedirect = async () => {
-    await signOut({ redirect: false });
-    router.replace('/login');
+  const handleLoginRedirect = () => {
+    logout();
   };
 
   return (

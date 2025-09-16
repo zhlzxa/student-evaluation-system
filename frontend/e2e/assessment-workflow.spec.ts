@@ -5,7 +5,7 @@ test.describe('Assessment Workflow', () => {
     await page.goto('/assessments/new');
 
     // Should show the new assessment page (even if it shows an error due to no backend)
-    await expect(page.getByText('Student Evaluation System')).toBeVisible();
+    await expect(page.getByText('Student Admission Review System')).toBeVisible();
     await expect(page).toHaveURL('/assessments/new');
   });
 
@@ -13,7 +13,7 @@ test.describe('Assessment Workflow', () => {
     await page.goto('/assessments');
 
     // Should show the assessments page
-    await expect(page.getByText('Student Evaluation System')).toBeVisible();
+    await expect(page.getByText('Student Admission Review System')).toBeVisible();
     await expect(page).toHaveURL('/assessments');
   });
 
@@ -21,7 +21,7 @@ test.describe('Assessment Workflow', () => {
     await page.goto('/rules');
 
     // Should show the rules page
-    await expect(page.getByText('Student Evaluation System')).toBeVisible();
+    await expect(page.getByText('Student Admission Review System')).toBeVisible();
     await expect(page).toHaveURL('/rules');
   });
 
@@ -32,7 +32,7 @@ test.describe('Assessment Workflow', () => {
     await page.goto('/assessments/runs/123');
 
     // Should show the assessment run details page
-    await expect(page.getByText('Student Evaluation System')).toBeVisible();
+    await expect(page.getByText('Student Admission Review System')).toBeVisible();
     await expect(page).toHaveURL('/assessments/runs/123');
   });
 });

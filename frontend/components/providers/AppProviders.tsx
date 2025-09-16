@@ -1,11 +1,11 @@
 "use client";
 import { PropsWithChildren } from 'react';
-import { SessionProvider } from 'next-auth/react';
 import { ReactQueryProvider } from './react-query';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { AppShell } from '../layout/AppShell';
 import { ErrorBoundary } from './ErrorBoundary';
 import { ToastProvider } from './ToastProvider';
+import { AuthProvider } from '@/hooks/useAuth';
 
 const theme = createTheme({
   palette: {
@@ -34,7 +34,7 @@ const theme = createTheme({
 export function AppProviders({ children }: PropsWithChildren) {
   return (
     <ErrorBoundary>
-      <SessionProvider>
+      <AuthProvider>
         <ToastProvider>
           <ReactQueryProvider>
             <ThemeProvider theme={theme}>
@@ -43,7 +43,7 @@ export function AppProviders({ children }: PropsWithChildren) {
             </ThemeProvider>
           </ReactQueryProvider>
         </ToastProvider>
-      </SessionProvider>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

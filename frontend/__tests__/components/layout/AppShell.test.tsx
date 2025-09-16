@@ -1,7 +1,19 @@
 import { render, screen } from '@testing-library/react'
 import { AppShell } from '@/components/layout/AppShell'
 import { usePathname, useRouter } from 'next/navigation'
-import { vi, beforeEach } from 'vitest'
+import { vi, beforeEach, describe, it, expect } from 'vitest'
+
+// Mock auth context used by AppShell
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({
+    user: { email: 'user@test.com', full_name: 'Test User' },
+    token: 'token',
+    login: vi.fn(),
+    logout: vi.fn(),
+    loading: false,
+    isAuthenticated: true,
+  }),
+}))
 
 const mockPush = vi.fn()
 const mockPathname = vi.fn()
@@ -26,7 +38,7 @@ describe('AppShell', () => {
       </AppShell>
     )
 
-    expect(screen.getByText('Student Evaluation System')).toBeInTheDocument()
+    expect(screen.getByText('Student Admission Review System')).toBeInTheDocument()
   })
 
   it('renders children content', () => {
@@ -48,7 +60,7 @@ describe('AppShell', () => {
 
     // Navigation items should be visible without clicking any menu
     expect(screen.getByText('Home')).toBeInTheDocument()
-    expect(screen.getByText('Rules')).toBeInTheDocument()
+    expect(screen.getByText('Programme Criteria')).toBeInTheDocument()
   })
 
   it('navigates when navigation items are clicked', async () => {
@@ -58,9 +70,9 @@ describe('AppShell', () => {
       </AppShell>
     )
 
-    screen.getByText('New Assessment').click()
+    screen.getByText('Home').click()
 
-    expect(mockPush).toHaveBeenCalledWith('/assessments/new')
+    expect(mockPush).toHaveBeenCalledWith('/assessments')
   })
 
   it('highlights current path in navigation', () => {
@@ -72,8 +84,8 @@ describe('AppShell', () => {
       </AppShell>
     )
 
-    // The Rules item should be selected
-    const rulesItem = screen.getByText('Rules').closest('[role="button"]')
+    // The Programme Criteria item should be selected
+    const rulesItem = screen.getByText('Programme Criteria').closest('[role="button"]')
     expect(rulesItem).toHaveClass('Mui-selected')
   })
 })

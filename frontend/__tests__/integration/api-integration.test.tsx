@@ -1,7 +1,21 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ToastProvider } from '@/components/providers/ToastProvider'
 import AssessmentsPage from '@/app/assessments/page'
-import { vi } from 'vitest'
+import { vi, describe, it, expect, beforeAll, afterAll } from 'vitest'
+
+// Reduce file descriptor usage by mocking heavy MUI icons
+vi.mock('@mui/icons-material', () => ({
+  Assessment: () => null,
+  Visibility: () => null,
+  Schedule: () => null,
+  CheckCircle: () => null,
+  HourglassEmpty: () => null,
+  Cancel: () => null,
+  Delete: () => null,
+  Add: () => null,
+  MoreVert: () => null,
+}))
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
@@ -10,32 +24,25 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
-// Mock the API hook to use the real fetch (which MSW will intercept)
-vi.mock('@/lib/api', () => ({
-  useApi: () => {
-    return async (path: string, init?: RequestInit) => {
-      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_BASE_URL || 'http://localhost:8000'
-      const res = await fetch(`${baseUrl}${path}`, {
-        ...init,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(init?.headers || {}),
-        },
-      })
-      return res
-    }
-  },
+// Mock auth for page usage
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({ token: null, logout: vi.fn(), isAuthenticated: true, loading: false, user: null }),
 }))
 
-// Mock environment variable
-vi.stubEnv('NEXT_PUBLIC_BACKEND_BASE_URL', 'http://localhost:8000')
-
+// Use MSW server from setup
 const createQueryClient = () => new QueryClient({
   defaultOptions: {
-    queries: {
-      retry: false,
-    },
+    queries: { retry: false },
   },
+})
+
+// Ensure env base URL exists for tests
+beforeAll(() => {
+  vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:8000')
+})
+
+afterAll(() => {
+  vi.unstubAllEnvs()
 })
 
 describe('API Integration Tests', () => {
@@ -43,15 +50,15 @@ describe('API Integration Tests', () => {
     const queryClient = createQueryClient()
     
     render(
-      <QueryClientProvider client={queryClient}>
-        <AssessmentsPage />
-      </QueryClientProvider>
+      <ToastProvider>
+        <QueryClientProvider client={queryClient}>
+          <AssessmentsPage />
+        </QueryClientProvider>
+      </ToastProvider>
     )
 
-    // Should show assessments list title
     expect(screen.getByText('Admission Reviews')).toBeInTheDocument()
 
-    // Wait for data table to appear (rows may be 0 if no data)
     await waitFor(() => {
       expect(screen.getByText('Status')).toBeInTheDocument()
       expect(screen.getByText('Started')).toBeInTheDocument()
@@ -59,25 +66,23 @@ describe('API Integration Tests', () => {
   })
 
   it('should handle API errors gracefully', async () => {
-    // Mock a server error for this specific test
     const { server } = await import('@/src/mocks/server')
     const { http, HttpResponse } = await import('msw')
     
     server.use(
-      http.get('/assessments/runs', () => {
-        return new HttpResponse(null, { status: 500 })
-      })
+      http.get('http://localhost:8000/assessments/runs', () => new HttpResponse(null, { status: 500 }))
     )
 
     const queryClient = createQueryClient()
     
     render(
-      <QueryClientProvider client={queryClient}>
-        <AssessmentsPage />
-      </QueryClientProvider>
+      <ToastProvider>
+        <QueryClientProvider client={queryClient}>
+          <AssessmentsPage />
+        </QueryClientProvider>
+      </ToastProvider>
     )
 
-    // Should still render list headers even if API errors
     await waitFor(() => {
       expect(screen.getByText('Admission Reviews')).toBeInTheDocument()
       expect(screen.getByText('Status')).toBeInTheDocument()

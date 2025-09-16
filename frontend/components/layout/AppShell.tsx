@@ -1,29 +1,45 @@
 "use client";
 import { PropsWithChildren, useMemo } from 'react';
-import { AppBar, Box, Container, CssBaseline, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Toolbar, Typography, Button } from '@mui/material';
+import { AppBar, Box, Container, CssBaseline, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Toolbar, Typography, Button, CircularProgress } from '@mui/material';
 import InsightsIcon from '@mui/icons-material/Insights';
 import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { usePathname, useRouter } from 'next/navigation';
-import { signOut, useSession } from 'next-auth/react';
+import { useAuth } from '@/hooks/useAuth';
 
 export function AppShell({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { user, logout, loading, isAuthenticated } = useAuth();
   const drawerWidth = 260;
   
   const nav = useMemo(() => [
     { label: 'Home', icon: <HomeIcon />, href: '/assessments' },
-    { label: 'Rules', icon: <InsightsIcon />, href: '/rules' },
+    { label: 'Programme Criteria', icon: <InsightsIcon />, href: '/rules' },
   ], []);
 
-  const handleLogout = async () => {
-    await signOut({ callbackUrl: '/login' });
+  const handleLogout = () => {
+    logout();
   };
 
+  // Show login/register pages without shell
   if (pathname === '/login' || pathname === '/register') {
     return <>{children}</>;
+  }
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    router.push('/login');
+    return null;
   }
 
   return (
@@ -36,15 +52,20 @@ export function AppShell({ children }: PropsWithChildren) {
         }}
       >
         <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>Student Evaluation System</Typography>
-          {session && (
-            <Button 
-              color="inherit" 
-              startIcon={<LogoutIcon />} 
-              onClick={handleLogout}
-            >
-              Logout
-            </Button>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>Student Admission Review System</Typography>
+          {user && (
+            <Box display="flex" alignItems="center" gap={2}>
+              <Typography variant="body2" color="inherit">
+                {user.full_name || user.email}
+              </Typography>
+              <Button
+                color="inherit"
+                startIcon={<LogoutIcon />}
+                onClick={handleLogout}
+              >
+                Logout
+              </Button>
+            </Box>
           )}
         </Toolbar>
       </AppBar>

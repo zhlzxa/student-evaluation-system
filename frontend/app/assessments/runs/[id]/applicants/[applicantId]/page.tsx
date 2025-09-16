@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Container, Stack, Typography, Paper, Button, Breadcrumbs, Link as MUILink, Skeleton } from '@mui/material';
+import { Container, Stack, Paper, Button, Breadcrumbs, Link as MUILink, Skeleton } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import { useApi } from '../../../../../../lib/api';
 import ApplicantResultView from '../../../../../../components/ApplicantResultView';

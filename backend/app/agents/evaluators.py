@@ -62,50 +62,42 @@ async def _ask_agent(
 
 async def english_agent(applicant_id: int, run_id: int, level_hint: str | None = None, policy: dict | None = None, model_override: Optional[str] = None) -> dict[str, Any]:
     instructions = (
-        "You evaluate English language requirements for UCL admission using document access and exemption checking tools. Follow these steps:\n"
+        "You are an English language assessment specialist for UCL admissions. Your role is to evaluate whether applicants meet the English language requirements. "
+        "Write your findings in clear, professional language that admissions staff can easily understand.\n"
         "\n"
-        "STEP 1 - Survey Documents:\n"
-        "- Call list_documents() to see available materials\n"
-        "- Prioritize: Personal Statement, CV, Transcripts, Test Certificates\n"
-        "- Use search_documents() to find 'IELTS', 'TOEFL', 'nationality', 'citizenship', 'passport', degree location info\n"
+        "EVALUATION PROCESS:\n"
+        "1. Document Review: Call list_documents() and search_documents() to find relevant materials (certificates, personal statements, CVs, transcripts)\n"
+        "2. Table Data Analysis: For documents with has_tables=true, use read_document_tables() or search_tables() to extract structured test scores\n"
+        "3. Exemption Check: Use check_comprehensive_exemption() to determine if the applicant is exempt based on nationality or degree country\n"
+        "4. Test Score Analysis: If not exempt, extract and evaluate English test scores (IELTS, TOEFL, etc.)\n"
+        "5. Requirements Assessment: Compare findings against UCL's requirements using the appropriate scoring functions\n"
         "\n"
-        "STEP 2 - Check Exemptions (STANDARDIZED LOGIC):\n"
-        "- Extract nationality/citizenship and degree country from documents\n"
-        "- CRITICAL: Call check_comprehensive_exemption(nationality=X, degree_country=Y, institution_name=Z)\n"
-        "- This plugin uses standardized country lists for deterministic exemption checking\n"
-        "- If result.is_exempt=true: Call score_exemption() and set score=10\n"
-        "- FALLBACK: If exemption check fails unexpectedly, you can call get_nationality_exempt_countries() and get_degree_exempt_countries() to see the full lists for manual verification\n"
+        "EVIDENCE WRITING GUIDELINES:\n"
+        "Write evidence entries as complete, professional sentences that explain your findings clearly. Examples:\n"
+        "- 'The applicant is a British citizen and therefore exempt from English language requirements.'\n"
+        "- 'IELTS Academic score of 7.5 overall (with 6.5 in each component) meets the Level 2 requirements for this programme.'\n"
+        "- 'No English language test certificates were found in the submitted documents.'\n"
+        "- 'The applicant completed their undergraduate degree at University of Toronto, Canada, which qualifies for English language exemption.'\n"
         "\n"
-        "STEP 3 - Extract Test Scores (if not exempt):\n"
-        "- Read documents likely to contain test scores (certificates, CV, PS)\n"
-        "- Extract ALL numeric scores: overall, reading, writing, speaking, listening\n"
-        "- Common formats: 'Overall: 7.5', 'Band Score: 7.5', 'Total: 100'\n"
-        "- Set test_type (e.g., 'IELTS') and test_overall (e.g., 7.5)\n"
+        "TECHNICAL REQUIREMENTS:\n"
+        "- Use exemption plugins for accurate country checking (don't guess)\n"
+        "- Call appropriate scoring functions (score_exemption(), score_ielts_level2(), etc.)\n"
+        "- If exempt, set score=10 and exemption=true\n"
+        "- Include all supporting details in the evidence array\n"
         "\n"
-        "STEP 4 - Evaluate Against Requirements (if not exempt):\n"
-        "- Use level hint (e.g., 'level2') to determine required thresholds\n"
-        "- Call meets_thresholds() function to compare observed vs. required scores\n"
-        "- For IELTS Level 2, call score_ielts_level2() to get 0-10 score\n"
-        "\n"
-        "STEP 5 - Prepare Evidence:\n"
-        "- Include exemption check results and reasoning in evidence array\n"
-        "- For test scores: include score details and policy evaluation\n"
-        "- All analysis must go in evidence array, not as markdown text\n"
-        "\n"
-        "MANDATORY OUTPUT FORMAT: Return ONLY valid JSON with no additional text, explanations, or formatting.\n"
-        "Do not use markdown code fences or backticks. Start with { and end with }.\n"
+        "OUTPUT FORMAT: Return ONLY valid JSON with no additional text.\n"
         "Return JSON: {exemption:boolean, test_type:string|null, test_overall:number|null, level:string|null, score:number|null, evidence:string[]}\n"
-        "CRITICAL: Use exemption plugin for standardized country checking. Don't guess or use semantic understanding for countries.\n"
-        "FALLBACK: If the automated exemption check seems incorrect, you can call get_nationality_exempt_countries() and get_degree_exempt_countries() to get the full exemption lists for manual verification.\n"
-        "Use minimal tokens - be strategic about which documents to read fully."
+        "Make evidence entries readable and informative for admissions staff review."
     )
     prompt = (
-        f"Level hint: {level_hint or 'level2'}\n"
-        "IMPORTANT: Use exemption plugin functions for standardized country checking - don't rely on semantic understanding.\n"
-        "IMPORTANT: Use meets_thresholds(...) for deterministic numeric comparisons.\n"
-        "IMPORTANT: Use document access functions to find English test and nationality information strategically.\n"
-        "CRITICAL: If exemption=true, MUST call score_exemption() and set score=10. Include exemption reasoning in evidence.\n"
-        "CRITICAL: All reasoning and analysis must be included in the evidence array, not as markdown text."
+        f"Required English level: {level_hint or 'level2'}\n\n"
+        "Please evaluate this applicant's English language qualifications and write a clear assessment.\n"
+        "Focus on providing helpful information for admissions staff who will review this application.\n\n"
+        "Remember to:\n"
+        "- Use the exemption checking functions to verify nationality and degree country exemptions\n"
+        "- Extract test scores accurately and compare them against requirements\n"
+        "- Write evidence in complete sentences that explain your findings\n"
+        "- Include specific details about test scores, exemption reasons, or missing documentation"
     )
     # First attempt
     ans = await _ask_agent(
@@ -150,39 +142,68 @@ async def degree_agent(
     model_override: Optional[str] = None,
 ) -> dict[str, Any]:
     instructions = (
-        "You verify degree equivalency and academic background fit for UCL using document access and specialized policy tools. "
-        "PRIORITY: For China/India applicants, use the new specialized evaluation functions first. "
+        "You are an academic credentials evaluator for UCL admissions. Your role is to assess whether applicants' degrees and academic backgrounds meet the entry requirements. "
+        "Write your findings in clear, informative language that helps admissions staff understand the applicant's academic profile.\n"
         "\n"
-        "Steps: "
-        "(1) Survey available documents with list_documents(); "
-        "(2) Read transcripts, degree certificates, and CV strategically; "
-        "(3) Infer the applicant's degree-awarding country and institution; "
-        "(4) CRITICAL - For China/India applicants: "
-        "   - If China (CHN): Call ChinaIndiaEligibilityPlugin-evaluate_china_applicant(institution_name, major_field, weighted_average_mark, target_uk_class) "
-        "   - If India (IND): Call ChinaIndiaEligibilityPlugin-evaluate_india_applicant(institution_name, mark_value, mark_scale, target_uk_class) "
-        "   - These functions provide authoritative eligibility determinations with precise thresholds and institution classifications "
-        "   - Use ChinaIndiaEligibilityPlugin-is_country_supported(country) to check if specialized evaluation is available "
-        "(5) For other countries: Call DegreePolicyPlugin-get_policy_for_country(country, target_class) to retrieve general policy requirements; "
-        "(6) Extract degree result (percent/CGPA) from transcripts; "
-        "(7) Verify subject/field relevance against programme requirements from checklist; "
-        "(8) Check prerequisite courses and academic background fit; "
-        "(9) If using general policy with percent threshold, call DegreeScorePlugin-meets_percent_threshold(observed_percent, min_required_percent); "
-        "(10) Compute score: use specialized plugin results OR call DegreeScorePlugin-percent_to_score(observed_percent) or estimate 0-10 from policy; "
-        "(11) MANDATORY: Search for and include the institution's current QS World University Ranking via web search. "
-        "IMPORTANT: The China/India plugins provide authoritative eligibility determinations - trust their results over general rules. "
-        "Use minimal tokens - focus on transcripts and certificates for degree info. "
+        "EVALUATION PROCESS:\n"
+        "1. Document Review: Examine transcripts, degree certificates, and CVs to understand the applicant's academic background\n"
+        "2. Table Data Analysis: For transcripts with has_tables=true, use read_document_tables() to extract structured grade data, course lists, and GPA information\n"
+        "3. Institution Analysis: Identify the degree-awarding institution, its reputation, and QS World Ranking\n"
+        "4. Academic Achievement: Extract grades, GPA, or percentage marks and assess against UCL requirements\n"
+        "5. Subject Relevance: Evaluate how well the applicant's field of study aligns with the target programme\n"
+        "6. Country-Specific Assessment: Use appropriate evaluation frameworks for different countries\n"
         "\n"
-        "MANDATORY OUTPUT FORMAT: Return ONLY valid JSON (no markdown, bullets, or prose). "
-        "All reasoning and analysis must be included in the evidence array, not as free text. "
-        "Do not ask questions or request confirmation. "
-        "The score field MUST be a number from 0 to 10 (never null). "
-        "Return JSON exactly with keys: {country:string|null, institution:string|null, meets_requirement:boolean|null, qs_rank:int|null, score:number, subject_fit:boolean|null, missing_prerequisites:string[], evidence:string[], policy_source:string|null}."
+        "EVIDENCE WRITING GUIDELINES:\n"
+        "Write evidence as complete, informative sentences that provide clear context. Include specific details:\n"
+        "- 'The applicant holds a Bachelor of Computer Science degree from Beijing University of Technology, China.'\n"
+        "- 'Academic performance shows a weighted average of 87.5%, which exceeds the 85% requirement for upper second-class equivalency.'\n"
+        "- 'Beijing University of Technology is ranked #801-1000 in the latest QS World University Rankings.'\n"
+        "- 'The Computer Science degree provides strong subject alignment with the target MSc programme requirements.'\n"
+        "- 'Transcript review confirms completion of prerequisite courses in mathematics and programming fundamentals.'\n"
+        "\n"
+        "TECHNICAL REQUIREMENTS:\n"
+        "- Use specialized evaluation plugins for China/India when applicable\n"
+        "- Include specific degree details: type (Bachelor/Master), field of study, institution name\n"
+        "- Provide exact academic results with context (e.g., '87.5% weighted average')\n"
+        "- Research and include the most recent QS World University Ranking (search for latest available year, be precise about ranking numbers)\n"
+        "- Assess subject fit and identify any missing prerequisites\n"
+        "- CRITICAL: The 'score' field MUST be an evaluation score from 0-10 rating the overall degree qualification strength, NOT the student's percentage grade\n"
+        "- Scoring scale: Strong degrees from top institutions (9-10), good degrees meeting requirements (7-8), marginal cases (5-6), below requirements (1-4), insufficient information (0)\n"
+        "- DO NOT use the student's academic percentage (e.g., 86.8%) as the score - that goes in evidence and degree details\n"
+        "\n"
+        "OUTPUT FORMAT: Return ONLY valid JSON with no additional text.\n"
+        "Return JSON: {country:string|null, institution:string|null, meets_requirement:boolean|null, qs_rank:int|null, score:number, subject_fit:boolean|null, missing_prerequisites:string[], evidence:string[], policy_source:string|null, degrees:object[]}\n"
+        "The score field must be a number from 0 to 10 representing the evaluation strength of the degree qualification, NOT the student's academic percentage.\n"
+        "The degrees field should contain an array of degree objects, each with: {degree_type:string, field_of_study:string, institution:string, country:string, grade:string|null, duration:string|null}\n"
+        "Include all identified degrees. If no degrees found, use empty array.\n"
+        "Make evidence entries detailed and informative for comprehensive degree evaluation review."
     )
     prompt = "\n".join([
-        f"Target UK class: {target_class}",
-        f"Checklist: {checklists or []}",
-        (f"Special Context (use only if relevant to country {detected_country_iso3}):\n{(special_context or '')[:6000]}" if special_context else ""),
-        "Use document access functions to find degree and academic information strategically.",
+        f"Target requirement: {target_class} UK class equivalent",
+        f"Programme requirements checklist: {checklists or []}",
+        (f"Country-specific context for {detected_country_iso3}:\n{(special_context or '')[:6000]}" if special_context else ""),
+        "",
+        "Please evaluate this applicant's academic credentials comprehensively.",
+        "Focus on providing clear, detailed information about their educational background.",
+        "",
+        "In your evidence, please include:",
+        "- Complete degree information (type, field of study, institution name and country)",
+        "- Specific academic results with percentage/GPA and any honors received",
+        "- Institution reputation and latest QS World University Ranking",
+        "- Assessment of subject relevance to the target programme",
+        "- Any missing prerequisites or areas of concern",
+        "",
+        "IMPORTANT: For each degree you identify, populate the degrees array with objects containing:",
+        "- degree_type: e.g., 'Bachelor of Science', 'Master of Arts', 'PhD'",
+        "- field_of_study: e.g., 'Computer Science', 'Mathematics', 'Engineering'",
+        "- institution: Full institution name",
+        "- country: Country where degree was awarded",
+        "- grade: Final grade/result if available (e.g., 'Upper Second Class Honours', '87.5%', '3.8 GPA')",
+        "- duration: Program duration if mentioned (e.g., '3 years', '2021-2024')",
+        "",
+        "Include ALL degrees found in the documents, not just the highest or most relevant one.",
+        "",
+        "Use the appropriate evaluation plugins and provide thorough documentation.",
     ])
     ans = await _ask_agent(
         "DegreeAgent",
@@ -196,7 +217,7 @@ async def degree_agent(
         applicant_id=applicant_id,
     )
     result = parse_agent_json(ans)
-    required_keys = {"country", "institution", "meets_requirement", "qs_rank", "score", "subject_fit", "missing_prerequisites", "evidence", "policy_source"}
+    required_keys = {"country", "institution", "meets_requirement", "qs_rank", "score", "subject_fit", "missing_prerequisites", "evidence", "policy_source", "degrees"}
     needs_retry = (
         result is None
         or not isinstance(result, dict)
@@ -219,7 +240,7 @@ async def degree_agent(
         result2 = parse_agent_json(ans2)
         if result2 is not None and isinstance(result2, dict) and required_keys.issubset(set(result2.keys())) and result2.get("score") is not None:
             return result2
-        return {"country": None, "institution": None, "meets_requirement": None, "qs_rank": None, "score": None, "subject_fit": None, "missing_prerequisites": [], "evidence": [], "policy_source": None}
+        return {"country": None, "institution": None, "meets_requirement": None, "qs_rank": None, "score": None, "subject_fit": None, "missing_prerequisites": [], "evidence": [], "policy_source": None, "degrees": []}
     return result
 
 
@@ -229,6 +250,7 @@ async def experience_agent(applicant_id: int, run_id: int, checklist: list[str] 
         "You assess internships/work/projects vs requirements using document access tools. "
         "First call list_documents() then prioritize: CV, Personal Statement, Experience Letters, Portfolio. "
         "Use Bing to gauge company reputation when found. "
+        "For documents with has_tables=true, use read_document_tables() or search_tables() to extract structured employment dates, durations, and project lists. "
         "Score (0-10): top companies >2 months -> 10; Tencent/Huawei -> 8; general IT -> 4; other work -> 2; school projects based on relevance. "
         "Use minimal tokens - focus on CV and experience-related documents. "
         "\n"
@@ -288,6 +310,7 @@ async def ps_rl_agent(applicant_id: int, run_id: int, checklist: list[str] | Non
         "Evaluate personal statement motivation and detail; verify alignment to checklist using document access tools. "
         "First call list_documents() then prioritize: Personal Statement, Reference Letters, Motivation Letter. "
         "For reference letters, validate recommender standing with Bing. "
+        "For documents with has_tables=true, use read_document_tables() or search_tables() to extract structured achievements, publications, or activity lists. "
         "Use minimal tokens - focus on PS and reference letter documents specifically. \n\n"
         "MANDATORY OUTPUT FORMAT: Return ONLY valid JSON with no additional text, explanations, or formatting.\n"
         "Do not use markdown code fences or backticks. Start with { and end with }.\n"
@@ -337,20 +360,53 @@ async def academic_agent(applicant_id: int, run_id: int, checklist: Optional[lis
         checklist_text = f"\n\nSpecific academic requirements to evaluate:\n" + "\n".join(f"- {req}" for req in checklist)
     
     instructions = (
-        "Evaluate publications and academic achievements using document access tools: verify authenticity via Bing, venue tier (conference/journal), and coauthorship with faculty. "
-        "First call list_documents() then prioritize: CV, Publications List, Research Statement, Portfolio. "
-        "Use search_documents() to find 'publication', 'paper', 'conference', 'journal', 'research', 'thesis'. "
-        "Scoring guidelines: top-tier venue publications=10; general conference/journal=5-7; undergraduate thesis=3-4; no academic work=0. "
-        "Use minimal tokens - focus on academic documents and publications. \n\n"
-        "CRITICAL: You MUST return valid JSON regardless of what you find or don't find.\n"
-        "MANDATORY OUTPUT FORMAT: Return ONLY valid JSON with no additional text, explanations, or formatting.\n"
-        "Do not use markdown code fences or backticks. Start with { and end with }.\n"
-        "IMPORTANT: Even if no publications are found, return JSON with score=0, papers=[], evidence=[\"No academic publications found in documents\"]\n"
-        "Required JSON format: {\"score\": number(0-10), \"papers\": [{\"title\": \"string\", \"venue\": \"string\", \"tier\": \"string\"}], \"evidence\": [\"string\"]}\n"
-        "Do NOT include conversational text like 'If there are other aspects...' or 'Let me know!'"
+        "You are an academic publications evaluator for UCL admissions. Your role is to assess applicants' research experience and academic contributions. "
+        "Write your findings in clear, detailed language that helps admissions staff understand the quality and scope of the applicant's academic work.\n"
+        "\n"
+        "EVALUATION PROCESS:\n"
+        "1. Document Review: Examine CVs, publication lists, research statements, and portfolios\n"
+        "2. Table Data Analysis: For documents with has_tables=true, use read_document_tables() or search_tables() to extract structured publication lists, awards, and metrics\n"
+        "3. Publication Discovery: Search for academic papers, conference presentations, thesis work, and research projects\n"
+        "4. Venue Assessment: Research the quality and reputation of publication venues (journals, conferences)\n"
+        "5. Impact Evaluation: Consider factors like citation count, venue ranking, and collaboration with faculty\n"
+        "\n"
+        "EVIDENCE WRITING GUIDELINES:\n"
+        "Write evidence as complete, informative sentences that provide comprehensive publication details:\n"
+        "- 'The applicant has published \"Deep Learning Approaches to Natural Language Processing\" in the IEEE Transactions on Neural Networks and Learning Systems (Impact Factor: 14.255).'\n"
+        "- 'Co-authored research paper \"Blockchain Security Analysis\" presented at the 2023 ACM Conference on Computer and Communications Security, a top-tier venue in cybersecurity research.'\n"
+        "- 'Completed undergraduate thesis titled \"Machine Learning Applications in Healthcare\" under supervision of Prof. Zhang at Beijing University of Technology.'\n"
+        "- 'First-authored paper demonstrates independent research capability in the target field of study.'\n"
+        "- 'No academic publications were found in the submitted documents, which is typical for undergraduate applicants.'\n"
+        "\n"
+        "PUBLICATION DETAILS TO INCLUDE:\n"
+        "- Complete paper titles and full venue names\n"
+        "- Publication year and authorship position (first author, co-author, etc.)\n"
+        "- Venue quality assessment (impact factor, conference ranking, tier classification)\n"
+        "- Research field relevance to the target programme\n"
+        "- Any notable achievements (awards, high citations, etc.)\n"
+        "\n"
+        "OUTPUT FORMAT: Return ONLY valid JSON with no additional text.\n"
+        "Required JSON format: {\"score\": number(0-10), \"papers\": [{\"title\": \"string\", \"venue\": \"string\", \"tier\": \"string\", \"year\": \"string|null\", \"authors\": \"string|null\"}], \"evidence\": [\"string\"]}\n"
+        "Each paper object should include:\n"
+        "- title: Complete paper title\n"
+        "- venue: Full venue name (journal/conference)\n"
+        "- tier: Quality assessment (e.g., 'Top-tier', 'High-impact', 'Regional conference')\n"
+        "- year: Publication year if available\n"
+        "- authors: Author list or authorship position if available\n"
+        "Make evidence entries comprehensive and informative for academic merit assessment."
         f"{checklist_text}"
     )
-    prompt = "Use document access functions to find academic publications and research work."
+    prompt = (
+        "Please evaluate this applicant's academic publications and research experience comprehensively.\n"
+        "Focus on providing detailed information about their scholarly contributions.\n\n"
+        "In your evidence, please include specific details about:\n"
+        "- Complete titles of published papers, conference presentations, or thesis work\n"
+        "- Full names of publication venues (journals, conferences, workshops)\n"
+        "- Quality indicators (impact factors, conference rankings, venue reputation)\n"
+        "- Authorship details and collaboration information\n"
+        "- Relevance of research topics to the target programme\n\n"
+        "If no publications are found, provide a clear explanation and context for the applicant's academic level."
+    )
     # First attempt
     ans = await _ask_agent(
         "AcademicAgent",

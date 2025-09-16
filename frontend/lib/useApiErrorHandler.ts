@@ -1,11 +1,11 @@
 "use client";
 import { useCallback } from 'react';
-import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/providers/ToastProvider';
+import { useAuth } from '@/hooks/useAuth';
 
 export function useApiErrorHandler() {
-  const { data: session } = useSession();
+  const { logout } = useAuth();
   const router = useRouter();
   const { addToast } = useToast();
 
@@ -16,15 +16,8 @@ export function useApiErrorHandler() {
         message: 'Session expired. Please sign in again.',
         severity: 'warning',
       });
-      
-      if (session) {
-        await signOut({ 
-          redirect: false,
-          callbackUrl: '/login' 
-        });
-      }
-      
-      router.push('/login');
+
+      logout();
       return;
     }
 
@@ -39,7 +32,7 @@ export function useApiErrorHandler() {
     }
 
     console.error('API Error:', error, response);
-  }, [session, router, addToast]);
+  }, [logout, router, addToast]);
 
   return { handleApiError };
 }
