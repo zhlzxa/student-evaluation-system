@@ -128,5 +128,9 @@ async def seed_equivalencies():
         db.close()
 
 
-if __name__ == "__main__":
+def main():
+    """Main function for degree equivalencies seeding"""
     asyncio.run(seed_equivalencies())
+
+if __name__ == "__main__":
+    main()
