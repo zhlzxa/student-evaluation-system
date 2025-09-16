@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     INVITE_CODE: str | None = None
 
     # DB
+    DATABASE_URL: str | None = None  # If set, overrides individual postgres settings
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
     POSTGRES_USER: str = "postgres"
@@ -59,6 +60,13 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
+        # Use DATABASE_URL if provided, otherwise construct from individual settings
+        if self.DATABASE_URL:
+            # Ensure the URL uses the correct driver
+            if self.DATABASE_URL.startswith("postgresql://"):
+                return self.DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+            return self.DATABASE_URL
+
         return (
             f"postgresql+psycopg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"

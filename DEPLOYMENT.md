@@ -50,6 +50,16 @@ cd student-evaluation-system
 
 **IMPORTANT: Never upload your local .env file to the server for security reasons!**
 
+**Option 1: Use the automated configuration script (Recommended)**
+```bash
+# Make the configuration script executable
+chmod +x configure-env.sh
+
+# Run the interactive configuration
+./configure-env.sh
+```
+
+**Option 2: Manual configuration**
 ```bash
 # Copy environment template
 cp .env.example .env
@@ -99,14 +109,27 @@ openssl rand -base64 32
 nano .env
 ```
 
-#### 4. One-Click Deployment
+#### 4. Deployment Options
 
+**Option A: HTTP Deployment (Quick)**
 ```bash
 # Give execution permission to deployment script
 chmod +x deploy.sh
 
 # Run one-click deployment
 ./deploy.sh
+```
+
+**Option B: HTTPS Deployment with SSL Certificate (Recommended for Production)**
+```bash
+# Give execution permission to HTTPS deployment script
+chmod +x deploy-https.sh
+
+# Update email in script (required for Let's Encrypt)
+nano deploy-https.sh  # Change EMAIL variable to your email
+
+# Run HTTPS deployment
+./deploy-https.sh
 ```
 
 The deployment script will automatically:
@@ -118,9 +141,14 @@ The deployment script will automatically:
 
 ### Access Application
 
-After successful deployment:
-- **Frontend**: http://your-server-ip
-- **Backend API**: http://your-server-ip/api
+**HTTP Deployment:**
+- **Frontend**: http://studentreview.uksouth.cloudapp.azure.com
+- **Backend API**: http://studentreview.uksouth.cloudapp.azure.com/api
+
+**HTTPS Deployment:**
+- **Frontend**: https://studentreview.uksouth.cloudapp.azure.com
+- **Backend API**: https://studentreview.uksouth.cloudapp.azure.com/api
+- HTTP traffic automatically redirects to HTTPS
 
 ### Management Commands
 
@@ -142,6 +170,17 @@ docker-compose restart [service_name]
 git pull
 docker-compose build
 docker-compose up -d
+
+# HTTPS-specific commands
+# Renew SSL certificate manually
+chmod +x renew-cert.sh
+./renew-cert.sh
+
+# Check certificate status
+sudo certbot certificates
+
+# Test nginx configuration
+docker-compose exec nginx nginx -t
 ```
 
 ### Troubleshooting
