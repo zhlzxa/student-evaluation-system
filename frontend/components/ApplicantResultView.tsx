@@ -378,7 +378,7 @@ function KeyValueRows({ data, agent }: { data: Record<string, unknown>; agent: s
       {/* Show experience highlights first and prominently for experience agent */}
       {highlightsList.length > 0 && agent.toLowerCase() === 'experience' && (
         <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, fontWeight: 600 }}>Work Experience</Typography>
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, fontWeight: 600 }}>Experience</Typography>
           <Stack spacing={1.5}>
             {highlightsList.map((highlight: string, i: number) => (
               <Box key={i} sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'background.paper', boxShadow: 1 }}>
@@ -859,8 +859,8 @@ export default function ApplicantResultView({ item, onChanged }: { item: Applica
                   </Card>
                 </Box>
               ) : (
-                <>
-                  <Box>
+                <Stack direction="row" spacing={1} sx={{ width: '100%' }}>
+                  <Box sx={{ flex: '0 0 25%' }}>
                     <Card 
                       variant="outlined"
                       sx={{ 
@@ -881,7 +881,7 @@ export default function ApplicantResultView({ item, onChanged }: { item: Applica
                       </CardContent>
                     </Card>
                   </Box>
-                  <Box>
+                  <Box sx={{ flex: '0 0 25%' }}>
                     <Card 
                       variant="outlined"
                       sx={{ 
@@ -902,7 +902,7 @@ export default function ApplicantResultView({ item, onChanged }: { item: Applica
                       </CardContent>
                     </Card>
                   </Box>
-                  <Box>
+                  <Box sx={{ flex: '0 0 50%' }}>
                     <Card 
                       variant="outlined"
                       sx={{ 
@@ -923,7 +923,7 @@ export default function ApplicantResultView({ item, onChanged }: { item: Applica
                       </CardContent>
                     </Card>
                   </Box>
-                </>
+                </Stack>
               )}
             </Box>
 
