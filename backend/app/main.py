@@ -34,6 +34,11 @@ def create_app() -> FastAPI:
     )
 
     api = FastAPI(title=f"{settings.APP_NAME}-api")
+
+    @api.get("/health")
+    async def api_health() -> dict[str, str]:
+        return {"status": "ok"}
+
     api.include_router(auth_router.router, prefix="/auth", tags=["authentication"])
     api.include_router(models_router.router, prefix="/models", tags=["models"])
     api.include_router(rules_router.router)
