@@ -7,6 +7,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-student_evaluation_system}
+    ports:
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
@@ -19,6 +21,8 @@ services:
   # Redis Cache
   redis:
     image: redis:7-alpine
+    ports:
+      - "6379:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
@@ -28,61 +32,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Backend API
-  backend:
-    build: ./backend
-    environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-student_evaluation_system}
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - AZURE_AI_AGENT_ENDPOINT=${AZURE_AI_AGENT_ENDPOINT}
-      - AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME=${AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME}
-      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
-      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
-      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
-      - AZURE_OPENAI_DEPLOYMENT_NAME=${AZURE_OPENAI_DEPLOYMENT_NAME}
-      - AZURE_DI_ENDPOINT=${AZURE_DI_ENDPOINT}
-      - AZURE_DI_KEY=${AZURE_DI_KEY}
-      - AZURE_BING_CONNECTION_NAME=${AZURE_BING_CONNECTION_NAME}
-      - SUPPORTED_MODELS=${SUPPORTED_MODELS}
-      - DEFAULT_MODEL=${DEFAULT_MODEL}
-    volumes:
-      - app_storage:/app/storage
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-
-  # Celery Worker for background tasks
-  celery:
-    build: ./backend
-    command: celery -A app.celery_app worker --loglevel=info
-    environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-student_evaluation_system}
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - AZURE_AI_AGENT_ENDPOINT=${AZURE_AI_AGENT_ENDPOINT}
-      - AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME=${AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME}
-      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
-      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
-      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
-      - AZURE_OPENAI_DEPLOYMENT_NAME=${AZURE_OPENAI_DEPLOYMENT_NAME}
-      - AZURE_DI_ENDPOINT=${AZURE_DI_ENDPOINT}
-      - AZURE_DI_KEY=${AZURE_DI_KEY}
-      - AZURE_BING_CONNECTION_NAME=${AZURE_BING_CONNECTION_NAME}
-      - SUPPORTED_MODELS=${SUPPORTED_MODELS}
-      - DEFAULT_MODEL=${DEFAULT_MODEL}
-    volumes:
-      - app_storage:/app/storage
-    depends_on:
-      - db
-      - redis
-      - backend
-    restart: unless-stopped
 
   # Frontend
   frontend:
@@ -93,7 +42,8 @@ services:
     environment:
       - NEXT_PUBLIC_API_BASE_URL=/api
     depends_on:
-      - backend
+      - db
+      - redis
     restart: unless-stopped
 
   # Nginx Reverse Proxy
@@ -108,8 +58,9 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - frontend
-      - backend
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
   pgdata:
