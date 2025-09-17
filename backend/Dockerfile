@@ -6,9 +6,13 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including Azure CLI
 RUN apt-get update && apt-get install -y \
     curl \
+    ca-certificates \
+    lsb-release \
+    gnupg \
+    && curl -sL https://aka.ms/InstallAzureCLIDeb | bash \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies

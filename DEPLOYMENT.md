@@ -1,24 +1,32 @@
 # Student Admission Review System - Deployment Guide
 
-## Docker Deployment
+## Deployment Options
 
-This is a fully dockerized deployment solution that can be quickly deployed on any VPS that supports Docker.
+This system supports multiple deployment architectures:
+
+1. **Hybrid Deployment (Recommended)**: Backend/Celery run natively, others containerized - solves Azure authentication issues
+2. **Full Docker Deployment**: All services containerized - may have Azure authentication limitations
 
 ### Prerequisites
 
 - VPS server (Recommended: 2 CPU cores, 4GB RAM, 20GB storage)
 - Docker and Docker Compose installed
-- Port 80 open
+- Python 3.8+ (for hybrid deployment)
+- Azure CLI (for Azure authentication)
+- Ports 80 and 443 open
 
 ### Service Architecture
 
-After deployment, the following services will be included:
-- **Frontend**: Next.js frontend application
-- **Backend**: FastAPI backend API
-- **Database**: PostgreSQL database
-- **Cache**: Redis cache
-- **Worker**: Celery background task processor
-- **Proxy**: Nginx reverse proxy
+#### Hybrid Architecture (Recommended)
+- **Frontend**: Next.js frontend application (containerized)
+- **Backend**: FastAPI backend API (native)
+- **Worker**: Celery background task processor (native)
+- **Database**: PostgreSQL database (containerized)
+- **Cache**: Redis cache (containerized)
+- **Proxy**: Nginx reverse proxy (containerized)
+
+#### Full Docker Architecture
+- All services run in Docker containers
 
 ### Deployment Steps
 
@@ -111,33 +119,74 @@ nano .env
 
 #### 4. Deployment Options
 
-**Option A: HTTP Deployment (Quick)**
-```bash
-# Give execution permission to deployment script
-chmod +x deploy.sh
+## Option A: Hybrid Deployment (Recommended)
 
-# Run one-click deployment
+### A1: First-time Full Deployment with HTTPS and Seed Data
+```bash
+# Update email in script (required for Let's Encrypt)
+nano deploy-native-full.sh  # Change EMAIL variable to your email
+
+# Give execution permission and run
+chmod +x deploy-native-full.sh
+./deploy-native-full.sh
+
+# After script completes, authenticate with Azure
+az login
+
+# Start backend services
+sudo systemctl enable student-evaluation-backend
+sudo systemctl enable student-evaluation-celery
+sudo systemctl start student-evaluation-backend
+sudo systemctl start student-evaluation-celery
+```
+
+### A2: Minimal Deployment (No Seed Data)
+```bash
+# For updates or when database already has data
+chmod +x deploy-native.sh
+./deploy-native.sh
+
+# Authenticate with Azure
+az login
+
+# Start backend services
+sudo systemctl start student-evaluation-backend
+sudo systemctl start student-evaluation-celery
+```
+
+### A3: Load Seed Data Separately
+```bash
+# If you used minimal deployment but need seed data
+cd backend
+python3 scripts/seed_all.py
+cd ..
+```
+
+## Option B: Full Docker Deployment (Legacy)
+
+**Note: May have Azure authentication issues. Use only if hybrid deployment is not suitable.**
+
+### B1: HTTP Deployment
+```bash
+chmod +x deploy.sh
 ./deploy.sh
 ```
 
-**Option B: HTTPS Deployment with SSL Certificate (Recommended for Production)**
+### B2: HTTPS Deployment
 ```bash
-# Give execution permission to HTTPS deployment script
+# Update email in script
+nano deploy-https.sh  # Change EMAIL variable
+
 chmod +x deploy-https.sh
-
-# Update email in script (required for Let's Encrypt)
-nano deploy-https.sh  # Change EMAIL variable to your email
-
-# Run HTTPS deployment
 ./deploy-https.sh
 ```
 
-The deployment script will automatically:
-- Build all Docker images
-- Start database and Redis
-- Initialize database tables
-- Start all services
-- Perform health checks
+## Why Choose Hybrid Deployment?
+
+- **Solves Azure Authentication**: Backend runs natively, can use `az login` directly
+- **Easier Debugging**: Direct access to logs via `journalctl`
+- **Flexible Updates**: Update backend without rebuilding containers
+- **Service Management**: Standard systemd service management
 
 ### Access Application
 
@@ -152,13 +201,80 @@ The deployment script will automatically:
 
 ### Management Commands
 
+## Hybrid Deployment Management
+
+### Service Status and Control
+```bash
+# Check all containerized services
+docker-compose ps
+
+# Check native backend services
+sudo systemctl status student-evaluation-backend
+sudo systemctl status student-evaluation-celery
+
+# Start/Stop/Restart backend services
+sudo systemctl start student-evaluation-backend
+sudo systemctl stop student-evaluation-backend
+sudo systemctl restart student-evaluation-backend
+
+sudo systemctl start student-evaluation-celery
+sudo systemctl stop student-evaluation-celery
+sudo systemctl restart student-evaluation-celery
+```
+
+### Viewing Logs
+```bash
+# Backend logs (native service)
+sudo journalctl -u student-evaluation-backend -f
+
+# Celery logs (native service)
+sudo journalctl -u student-evaluation-celery -f
+
+# Containerized service logs
+docker-compose logs -f frontend
+docker-compose logs -f nginx
+docker-compose logs -f db
+docker-compose logs -f redis
+```
+
+### Updates and Redeployment
+```bash
+# Update code
+git pull
+
+# Update Python dependencies
+cd backend
+pip3 install -r requirements.txt
+cd ..
+
+# Restart backend services
+sudo systemctl restart student-evaluation-backend
+sudo systemctl restart student-evaluation-celery
+
+# Rebuild and restart containerized services if needed
+docker-compose build frontend
+docker-compose up -d frontend nginx
+```
+
+### Health Checks
+```bash
+# Check backend API health
+curl http://localhost:8000/api/health
+
+# Check if services are responding
+sudo systemctl is-active student-evaluation-backend
+sudo systemctl is-active student-evaluation-celery
+```
+
+## Full Docker Deployment Management
+
+### Traditional Docker Commands
 ```bash
 # View all service status
 docker-compose ps
 
 # View logs
 docker-compose logs -f [service_name]
-# Example: docker-compose logs -f backend
 
 # Stop all services
 docker-compose down
@@ -170,11 +286,12 @@ docker-compose restart [service_name]
 git pull
 docker-compose build
 docker-compose up -d
+```
 
-# HTTPS-specific commands
+### SSL Certificate Management
+```bash
 # Renew SSL certificate manually
-chmod +x renew-cert.sh
-./renew-cert.sh
+sudo certbot renew
 
 # Check certificate status
 sudo certbot certificates
