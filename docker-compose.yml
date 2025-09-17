@@ -36,6 +36,17 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - AZURE_AI_AGENT_ENDPOINT=${AZURE_AI_AGENT_ENDPOINT}
+      - AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME=${AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
+      - AZURE_OPENAI_DEPLOYMENT_NAME=${AZURE_OPENAI_DEPLOYMENT_NAME}
+      - AZURE_DI_ENDPOINT=${AZURE_DI_ENDPOINT}
+      - AZURE_DI_KEY=${AZURE_DI_KEY}
+      - AZURE_BING_CONNECTION_NAME=${AZURE_BING_CONNECTION_NAME}
+      - SUPPORTED_MODELS=${SUPPORTED_MODELS}
+      - DEFAULT_MODEL=${DEFAULT_MODEL}
     volumes:
       - app_storage:/app/storage
     depends_on:
@@ -48,12 +59,23 @@ services:
   # Celery Worker for background tasks
   celery:
     build: ./backend
-    command: celery -A app.tasks.celery worker --loglevel=info
+    command: celery -A app.celery_app worker --loglevel=info
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-student_evaluation_system}
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - AZURE_AI_AGENT_ENDPOINT=${AZURE_AI_AGENT_ENDPOINT}
+      - AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME=${AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
+      - AZURE_OPENAI_DEPLOYMENT_NAME=${AZURE_OPENAI_DEPLOYMENT_NAME}
+      - AZURE_DI_ENDPOINT=${AZURE_DI_ENDPOINT}
+      - AZURE_DI_KEY=${AZURE_DI_KEY}
+      - AZURE_BING_CONNECTION_NAME=${AZURE_BING_CONNECTION_NAME}
+      - SUPPORTED_MODELS=${SUPPORTED_MODELS}
+      - DEFAULT_MODEL=${DEFAULT_MODEL}
     volumes:
       - app_storage:/app/storage
     depends_on:
@@ -64,9 +86,12 @@ services:
 
   # Frontend
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_BASE_URL: /api
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000
+      - NEXT_PUBLIC_API_BASE_URL=/api
     depends_on:
       - backend
     restart: unless-stopped
