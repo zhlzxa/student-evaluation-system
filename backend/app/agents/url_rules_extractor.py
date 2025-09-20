@@ -99,7 +99,7 @@ class URLRulesExtractor:
                     name="URL-Rules-Extractor",
                     instructions="You are a JSON extraction specialist. You must return ONLY valid JSON with no additional text, explanations, or formatting. Follow the user's format requirements exactly.",
                     message=prompt,
-                    with_bing_grounding=True,  # Enable web grounding for better accuracy
+                    with_bing_grounding=False,  # Disable for o3-mini compatibility
                     model=deployment,
                 )
 
@@ -124,15 +124,24 @@ class URLRulesExtractor:
 
     def _build_parsing_prompt(self, page_text: str, custom_requirements: list[str] | None = None) -> str:
         return (
-            "You are a JSON extraction specialist. Your task is to analyze UCL programme webpage content and extract admission requirements.\n\n"
+            "You are a JSON extraction specialist. Your task is to analyze UCL programme webpage content and extract admission requirements "
+            "into appropriate evaluation agent categories.\n\n"
             f"Programme Webpage Content:\n{page_text}\n\n"
             f"Custom Requirements to Include: {custom_requirements or []}\n\n"
+            "AGENT CATEGORIES:\n"
+            "- english_agent: English language requirements (IELTS, TOEFL, language proficiency, exemptions)\n"
+            "- degree_agent: Academic degree requirements (GPA, classification, subject prerequisites, academic background)\n"
+            "- experience_agent: Work experience, internships, professional projects, industry experience\n"
+            "- ps_rl_agent: Personal statement, reference letters, motivation letters, recommendation requirements\n"
+            "- academic_agent: Research publications, academic achievements, scholarly work\n\n"
             "CRITICAL INSTRUCTIONS:\n"
             "- You MUST return ONLY valid JSON, nothing else\n"
             "- NO explanatory text before or after the JSON\n"
             "- NO markdown code fences or backticks\n"
             "- NO comments or additional formatting\n"
-            "- The response must start with { and end with }\n\n"
+            "- The response must start with { and end with }\n"
+            "- Assign each requirement to the MOST appropriate single category\n"
+            "- If a requirement spans multiple categories, choose the primary/dominant one\n\n"
             "Required JSON structure (return exactly this format):\n"
             "{\n"
             '  "checklists": {\n'
@@ -142,7 +151,7 @@ class URLRulesExtractor:
             '    "ps_rl_agent": ["requirement if any"],\n'
             '    "academic_agent": ["requirement if any"]\n'
             '  },\n'
-            '  "english_level": "level1/level2/level3 or null",\n'
+            '  "english_level": "level1/level2/level3/level4/level5 or null",\n'
             '  "degree_requirement_class": "FIRST/UPPER_SECOND/LOWER_SECOND or null"\n'
             "}\n\n"
             "START YOUR RESPONSE WITH THE JSON OBJECT NOW:"

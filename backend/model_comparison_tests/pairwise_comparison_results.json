@@ -1,0 +1,143 @@
+{
+  "test_summary": {
+    "test_type": "Pairwise Comparison Agent Model Comparison",
+    "models_compared": [
+      "gpt-4.1",
+      "o3-mini"
+    ],
+    "test_timestamp": "2025-09-19 22:01:12",
+    "gpt41_summary": {
+      "total_tests": 3,
+      "successful_tests": 3,
+      "failed_tests": 0,
+      "average_execution_time": 6.880075216293335,
+      "total_cost": 0.011184000000000001,
+      "winner_distribution": {
+        "B": 2,
+        "tie": 1
+      }
+    },
+    "o3mini_summary": {
+      "total_tests": 3,
+      "successful_tests": 3,
+      "failed_tests": 0,
+      "average_execution_time": 11.113920529683432,
+      "total_cost": 0.015309800000000002,
+      "winner_distribution": {
+        "A": 1,
+        "B": 1,
+        "tie": 1
+      }
+    }
+  },
+  "detailed_results": [
+    {
+      "case_id": "case_1_mid_tier_comparison",
+      "model": "gpt-4.1",
+      "success": true,
+      "execution_time": 9.037760019302368,
+      "input_tokens": 1346,
+      "output_tokens": 133,
+      "estimated_cost": 0.0037560000000000007,
+      "winner": "B",
+      "reason": "Applicant B demonstrates stronger evidence of research, practical experience, and programme-specific engagement with computer graphics. While Applicant A has a higher degree score (First Class Honours), B compensates with substantial academic (published paper, research conference presentation, research placement) and experience scores (graphics lab and internship with graphics programming). For a research-oriented Computer Graphics programme, B's hands-on work, independent research and collaboration, and clear alignment with advanced graphics make B the better fit, despite A's slightly better degree and academic performance. B's references also highlight potential in research, making B's overall profile more suitable.",
+      "result": {
+        "winner": "B",
+        "reason": "Applicant B demonstrates stronger evidence of research, practical experience, and programme-specific engagement with computer graphics. While Applicant A has a higher degree score (First Class Honours), B compensates with substantial academic (published paper, research conference presentation, research placement) and experience scores (graphics lab and internship with graphics programming). For a research-oriented Computer Graphics programme, B's hands-on work, independent research and collaboration, and clear alignment with advanced graphics make B the better fit, despite A's slightly better degree and academic performance. B's references also highlight potential in research, making B's overall profile more suitable."
+      },
+      "timestamp": "2025-09-19 22:00:06",
+      "raw_response": "{\"winner\": \"B\", \"reason\": \"Applicant B demonstrates stronger evidence of research, practical experience, and programme-specific engagement with computer graphics. While Applicant A has a higher degree score (First Class Honours), B compensates with substantial academic (published paper, research conference presentation, research placement) and experience scores (graphics lab and internship with graphics programming). For a research-oriented Computer Graphics programme, B's hands-on work, independent research and collaboration, and clear alignment with advanced graphics make B the better fit, despite A's slightly better degree and academic performance. B's references also highlight potential in research, making B's overall profile more suitable.\"}",
+      "token_source": "azure_actual"
+    },
+    {
+      "case_id": "case_1_mid_tier_comparison",
+      "model": "o3-mini",
+      "success": true,
+      "execution_time": 12.346073627471924,
+      "input_tokens": 1532,
+      "output_tokens": 974,
+      "estimated_cost": 0.005970800000000001,
+      "winner": "A",
+      "reason": "Applicant A stands out primarily due to their strong degree performance, evidenced by a First Class Honours which carries a 50% weight in the assessment. Despite Applicant B having stronger research publications and work experience, the higher degree score and favorable personal statement (ps_rl) tip the balance in favor of A for the UCL programme.",
+      "result": {
+        "winner": "A",
+        "reason": "Applicant A stands out primarily due to their strong degree performance, evidenced by a First Class Honours which carries a 50% weight in the assessment. Despite Applicant B having stronger research publications and work experience, the higher degree score and favorable personal statement (ps_rl) tip the balance in favor of A for the UCL programme."
+      },
+      "timestamp": "2025-09-19 22:00:22",
+      "raw_response": "{\"winner\": \"A\", \"reason\": \"Applicant A stands out primarily due to their strong degree performance, evidenced by a First Class Honours which carries a 50% weight in the assessment. Despite Applicant B having stronger research publications and work experience, the higher degree score and favorable personal statement (ps_rl) tip the balance in favor of A for the UCL programme.\"}",
+      "token_source": "azure_actual"
+    },
+    {
+      "case_id": "case_2_china_universities",
+      "model": "gpt-4.1",
+      "success": true,
+      "execution_time": 5.829431772232056,
+      "input_tokens": 1454,
+      "output_tokens": 179,
+      "estimated_cost": 0.00434,
+      "winner": "B",
+      "reason": "While both applicants meet core academic and English requirements, Applicant B demonstrates significantly stronger research experience and subject-specific engagement, as shown by two graphics-related papers (including one regional conference publication) and a focused research assistant role in a university graphics lab. B’s academic output aligns directly with the Computer Graphics programme’s research emphasis and provides evidence of independent research capability, supported by a strong reference from a research supervisor. In contrast, Applicant A’s profile lacks graphics-specific research or project work, with professional experience limited to basic web development and no graphics or computer vision exposure. Although A’s degree is from a slightly higher ranked university, B’s superior subject fit in academic output and personal statement more strongly matches UCL’s programme requirements, outweighing minor differences in institutional ranking and industry experience. Therefore, B is the better overall fit for the programme.",
+      "result": {
+        "winner": "B",
+        "reason": "While both applicants meet core academic and English requirements, Applicant B demonstrates significantly stronger research experience and subject-specific engagement, as shown by two graphics-related papers (including one regional conference publication) and a focused research assistant role in a university graphics lab. B’s academic output aligns directly with the Computer Graphics programme’s research emphasis and provides evidence of independent research capability, supported by a strong reference from a research supervisor. In contrast, Applicant A’s profile lacks graphics-specific research or project work, with professional experience limited to basic web development and no graphics or computer vision exposure. Although A’s degree is from a slightly higher ranked university, B’s superior subject fit in academic output and personal statement more strongly matches UCL’s programme requirements, outweighing minor differences in institutional ranking and industry experience. Therefore, B is the better overall fit for the programme."
+      },
+      "timestamp": "2025-09-19 22:00:31",
+      "raw_response": "{\"winner\": \"B\", \"reason\": \"While both applicants meet core academic and English requirements, Applicant B demonstrates significantly stronger research experience and subject-specific engagement, as shown by two graphics-related papers (including one regional conference publication) and a focused research assistant role in a university graphics lab. B’s academic output aligns directly with the Computer Graphics programme’s research emphasis and provides evidence of independent research capability, supported by a strong reference from a research supervisor. In contrast, Applicant A’s profile lacks graphics-specific research or project work, with professional experience limited to basic web development and no graphics or computer vision exposure. Although A’s degree is from a slightly higher ranked university, B’s superior subject fit in academic output and personal statement more strongly matches UCL’s programme requirements, outweighing minor differences in institutional ranking and ind",
+      "token_source": "azure_actual"
+    },
+    {
+      "case_id": "case_2_china_universities",
+      "model": "o3-mini",
+      "success": true,
+      "execution_time": 14.887144327163696,
+      "input_tokens": 1640,
+      "output_tokens": 1230,
+      "estimated_cost": 0.007216,
+      "winner": "B",
+      "reason": "Applicant B, while having a slightly lower degree score, shows a markedly stronger academic research profile with publications and an extended project directly relevant to graphics, which is highly valued for the UCL programme. The superior academic evidence and research-focused personal statement outweigh the minor advantage Applicant A holds in industry experience, making B the better overall fit.",
+      "result": {
+        "winner": "B",
+        "reason": "Applicant B, while having a slightly lower degree score, shows a markedly stronger academic research profile with publications and an extended project directly relevant to graphics, which is highly valued for the UCL programme. The superior academic evidence and research-focused personal statement outweigh the minor advantage Applicant A holds in industry experience, making B the better overall fit."
+      },
+      "timestamp": "2025-09-19 22:00:50",
+      "raw_response": "{\"winner\": \"B\", \"reason\": \"Applicant B, while having a slightly lower degree score, shows a markedly stronger academic research profile with publications and an extended project directly relevant to graphics, which is highly valued for the UCL programme. The superior academic evidence and research-focused personal statement outweigh the minor advantage Applicant A holds in industry experience, making B the better overall fit.\"}",
+      "token_source": "azure_actual"
+    },
+    {
+      "case_id": "case_3_identical_test",
+      "model": "gpt-4.1",
+      "success": true,
+      "execution_time": 5.773033857345581,
+      "input_tokens": 1232,
+      "output_tokens": 78,
+      "estimated_cost": 0.003088,
+      "winner": "tie",
+      "reason": "Applicants A and B have identical structured scores and qualitative evidence across all evaluated dimensions, including degree, academic history, relevant experience, personal statements, and references. Both meet UCL's programme requirements to an equal extent and show similar strengths and weaknesses. There is no distinguishing evidence to favour one applicant over the other for ranking purposes.",
+      "result": {
+        "winner": "tie",
+        "reason": "Applicants A and B have identical structured scores and qualitative evidence across all evaluated dimensions, including degree, academic history, relevant experience, personal statements, and references. Both meet UCL's programme requirements to an equal extent and show similar strengths and weaknesses. There is no distinguishing evidence to favour one applicant over the other for ranking purposes."
+      },
+      "timestamp": "2025-09-19 22:00:59",
+      "raw_response": "{\"winner\": \"tie\", \"reason\": \"Applicants A and B have identical structured scores and qualitative evidence across all evaluated dimensions, including degree, academic history, relevant experience, personal statements, and references. Both meet UCL's programme requirements to an equal extent and show similar strengths and weaknesses. There is no distinguishing evidence to favour one applicant over the other for ranking purposes.\"}",
+      "token_source": "azure_actual"
+    },
+    {
+      "case_id": "case_3_identical_test",
+      "model": "o3-mini",
+      "success": true,
+      "execution_time": 6.108543634414673,
+      "input_tokens": 1418,
+      "output_tokens": 128,
+      "estimated_cost": 0.002123,
+      "winner": "tie",
+      "reason": "Both applicants have identical scores and supporting evidence across all categories, including English, degree, academic, experience, and personal statement/references. Their profiles provide equivalent alignment with the UCL programme requirements and demonstrate similar academic and professional strengths, resulting in a tie decision.",
+      "result": {
+        "winner": "tie",
+        "reason": "Both applicants have identical scores and supporting evidence across all categories, including English, degree, academic, experience, and personal statement/references. Their profiles provide equivalent alignment with the UCL programme requirements and demonstrate similar academic and professional strengths, resulting in a tie decision."
+      },
+      "timestamp": "2025-09-19 22:01:09",
+      "raw_response": "{\"winner\": \"tie\", \"reason\": \"Both applicants have identical scores and supporting evidence across all categories, including English, degree, academic, experience, and personal statement/references. Their profiles provide equivalent alignment with the UCL programme requirements and demonstrate similar academic and professional strengths, resulting in a tie decision.\"}",
+      "token_source": "azure_actual"
+    }
+  ]
+}

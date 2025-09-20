@@ -1,0 +1,95 @@
+{
+  "case_id": "case_1_mid_tier_comparison",
+  "applicant": "A",
+  "description": "Sheffield University First Class - strong degree performance",
+  "expected_weighted_score": 6.90,
+  "evaluation_data": {
+    "english": {
+      "score": 10.0,
+      "details": {
+        "exemption": true,
+        "test_type": null,
+        "test_overall": null,
+        "level": "exempt",
+        "evidence": ["British citizen, exempt from English language requirements"]
+      }
+    },
+    "degree": {
+      "score": 8.0,
+      "details": {
+        "country": "UK",
+        "institution": "University of Sheffield",
+        "meets_requirement": true,
+        "qs_rank": 104,
+        "subject_fit": true,
+        "missing_prerequisites": [],
+        "evidence": [
+          "First Class Honours in Computer Science from University of Sheffield",
+          "University of Sheffield ranked #104 in QS World University Rankings 2025",
+          "Excellent academic performance with final year average of 78%",
+          "Strong foundation in algorithms, data structures, and software engineering",
+          "Excellent subject alignment with Computer Graphics programme"
+        ],
+        "policy_source": "UCL admissions requirements",
+        "degrees": [
+          {
+            "degree_type": "Bachelor of Science",
+            "field_of_study": "Computer Science",
+            "institution": "University of Sheffield",
+            "country": "UK",
+            "grade": "First Class Honours",
+            "duration": "3 years"
+          }
+        ]
+      }
+    },
+    "academic": {
+      "score": 4.0,
+      "details": {
+        "papers": [],
+        "evidence": [
+          "No academic publications found in submitted documents",
+          "Completed undergraduate dissertation on 'Machine Learning for Network Security' achieving 81%",
+          "Standard undergraduate level work, no conference presentations",
+          "No research experience beyond required coursework"
+        ]
+      }
+    },
+    "experience": {
+      "score": 4.0,
+      "details": {
+        "highlights": [
+          "Part-time development work during studies"
+        ],
+        "evidence": [
+          "18 months part-time work as Junior Web Developer at Sheffield-based startup",
+          "Experience with HTML, CSS, JavaScript and basic backend development",
+          "Contributed to company website maintenance and small feature development",
+          "No leadership experience or major project ownership",
+          "Limited exposure to graphics programming or computer vision"
+        ]
+      }
+    },
+    "ps_rl": {
+      "score": 7.5,
+      "details": {
+        "strengths": [
+          {
+            "point": "Strong academic record and clear motivation",
+            "evidence": "Personal statement demonstrates excellent academic foundation with First Class degree and specific interest in computer graphics research"
+          },
+          {
+            "point": "Solid references from academic and industry supervisors",
+            "evidence": "Academic reference confirms exceptional performance in final year, industry reference validates practical programming skills"
+          }
+        ],
+        "weaknesses": [
+          {
+            "point": "Limited research or advanced project experience",
+            "evidence": "Personal statement lacks mention of independent research projects or advanced graphics programming beyond coursework"
+          }
+        ]
+      }
+    }
+  }
+}

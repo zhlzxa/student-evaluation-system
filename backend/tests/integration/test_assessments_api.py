@@ -236,8 +236,8 @@ class TestCustomRequirementsClassification:
         token = response.json()["access_token"]
         return {"Authorization": f"Bearer {token}"}
 
-    @patch('app.tasks.assessment_pipeline.classify_custom_requirements')
-    @patch('app.tasks.assessment_pipeline.merge_classified_requirements_with_checklists')
+    @patch('app.agents.custom_requirements_classifier.classify_custom_requirements')
+    @patch('app.agents.custom_requirements_classifier.merge_classified_requirements_with_checklists')
     def test_custom_requirements_classification_in_pipeline(self, mock_merge, mock_classify, test_client):
         """Test that custom requirements are properly classified during pipeline execution."""
         headers = self.get_auth_headers(test_client)

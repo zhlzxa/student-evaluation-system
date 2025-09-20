@@ -347,7 +347,7 @@ async def ps_rl_agent(applicant_id: int, run_id: int, checklist: list[str] | Non
         "PsRlAgent",
         instructions,
         prompt,
-        with_bing=False,
+        with_bing=True,
         plugins=[DocStorePlugin(applicant_id, run_id)],
         agent_type="ps_rl",
         model_override=model_override,
@@ -363,7 +363,7 @@ async def ps_rl_agent(applicant_id: int, run_id: int, checklist: list[str] | Non
             "PsRlAgentRetry",
             retry_instructions,
             prompt,
-            with_bing=False,
+            with_bing=True,
             plugins=[DocStorePlugin(applicant_id, run_id)],
             agent_type="ps_rl",
             model_override=model_override,
@@ -478,8 +478,11 @@ async def compare_agent(app_a: dict[str, Any], app_b: dict[str, Any], model_over
     Returns JSON: {winner: "A"|"B"|"tie", reason: string}
     """
     instructions = (
-        "You compare two applicants using structured scores and evidence from multiple agents (english, degree, academic, experience, ps_rl). "
-        "Choose which applicant is better overall for UCL admissions based on the provided weights (english 10%, degree 50%, academic 15%, experience 15%, ps_rl 10%). \n\n"
+        "You are performing detailed pairwise comparison for applicants with similar overall scores to refine their ranking in the admissions process. "
+        "These applicants have already passed initial scoring and have comparable weighted scores that require nuanced analysis to determine final ranking order. "
+        "Your task is to conduct holistic admissions decisions beyond simple score comparison, considering qualitative factors, evidence strength, and programme-specific requirements. "
+        "Use the provided structured scores and evidence from multiple agents (english, degree, academic, experience, ps_rl) as baseline reference, "
+        "but focus on determining which applicant would be a better overall fit for the UCL programme based on the weights (english 10%, degree 50%, academic 15%, experience 15%, ps_rl 10%). \n\n"
         "MANDATORY OUTPUT FORMAT: Return ONLY valid JSON with no additional text, explanations, or formatting.\n"
         "Do not use markdown code fences or backticks. Start with { and end with }.\n"
         "Return strict JSON: {winner: 'A'|'B'|'tie', reason: string}."
@@ -491,7 +494,7 @@ async def compare_agent(app_a: dict[str, Any], app_b: dict[str, Any], model_over
         "PairwiseAgent",
         instructions,
         content,
-        with_bing=True,
+        with_bing=False,
         agent_type="compare",
         model_override=model_override,
     )
@@ -504,7 +507,7 @@ async def compare_agent(app_a: dict[str, Any], app_b: dict[str, Any], model_over
             "PairwiseAgentRetry",
             retry_instructions,
             content,
-            with_bing=True,
+            with_bing=False,
             agent_type="compare",
             model_override=model_override,
         )

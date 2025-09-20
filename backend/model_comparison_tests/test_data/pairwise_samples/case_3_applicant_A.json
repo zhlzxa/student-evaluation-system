@@ -1,0 +1,95 @@
+{
+  "case_id": "case_3_identical_test",
+  "applicant": "A",
+  "description": "Bath University Upper Second Class - consistency test",
+  "expected_weighted_score": 7.00,
+  "evaluation_data": {
+    "english": {
+      "score": 10.0,
+      "details": {
+        "exemption": true,
+        "test_type": null,
+        "test_overall": null,
+        "level": "exempt",
+        "evidence": ["Completed degree at University of Bath, UK - exempt from English language requirements"]
+      }
+    },
+    "degree": {
+      "score": 7.0,
+      "details": {
+        "country": "UK",
+        "institution": "University of Bath",
+        "meets_requirement": true,
+        "qs_rank": 148,
+        "subject_fit": true,
+        "missing_prerequisites": [],
+        "evidence": [
+          "Upper Second Class Honours (2:1) in Computer Science from University of Bath",
+          "University of Bath ranked #148 in QS World University Rankings 2025",
+          "Good academic performance with final year average of 65%",
+          "Solid foundation in computer science fundamentals",
+          "Good subject alignment with Computer Graphics programme requirements"
+        ],
+        "policy_source": "UCL admissions requirements",
+        "degrees": [
+          {
+            "degree_type": "Bachelor of Science",
+            "field_of_study": "Computer Science",
+            "institution": "University of Bath",
+            "country": "UK",
+            "grade": "Upper Second Class Honours",
+            "duration": "3 years"
+          }
+        ]
+      }
+    },
+    "academic": {
+      "score": 5.0,
+      "details": {
+        "papers": [],
+        "evidence": [
+          "No academic publications found in submitted documents",
+          "Completed undergraduate dissertation on 'Machine Learning for Data Analytics' achieving 70%",
+          "Standard undergraduate level research work, no external publications",
+          "Participated in departmental research seminars"
+        ]
+      }
+    },
+    "experience": {
+      "score": 5.0,
+      "details": {
+        "highlights": [
+          "Software development internship"
+        ],
+        "evidence": [
+          "10-week summer internship at Bath-based software company",
+          "Experience with full-stack web development using React and Node.js",
+          "Contributed to company's client project development",
+          "Basic industry exposure with moderate technical impact",
+          "Limited exposure to graphics programming"
+        ]
+      }
+    },
+    "ps_rl": {
+      "score": 7.0,
+      "details": {
+        "strengths": [
+          {
+            "point": "Clear motivation and academic foundation",
+            "evidence": "Personal statement demonstrates good academic background and genuine interest in computer graphics field"
+          },
+          {
+            "point": "Solid academic and industry references",
+            "evidence": "References confirm good academic performance and practical programming skills"
+          }
+        ],
+        "weaknesses": [
+          {
+            "point": "Limited graphics-specific experience",
+            "evidence": "Personal statement lacks mention of graphics programming projects or computer vision coursework"
+          }
+        ]
+      }
+    }
+  }
+}

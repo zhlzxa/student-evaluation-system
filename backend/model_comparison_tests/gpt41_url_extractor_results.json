@@ -1,0 +1,233 @@
+{
+  "test_summary": {
+    "model": "gpt-4.1-native",
+    "total_tests": 6,
+    "successful_tests": 6,
+    "failed_tests": 0,
+    "total_cost": 0.065548,
+    "average_execution_time": 6.9892241557439165,
+    "test_timestamp": "2025-09-19 15:43:42"
+  },
+  "detailed_results": [
+    {
+      "url": "https://www.ucl.ac.uk/prospective-students/graduate/taught-degrees/computer-graphics-vision-and-imaging-msc",
+      "model": "gpt-4.1-native",
+      "run_number": 1,
+      "success": true,
+      "execution_time": 8.010661602020264,
+      "input_tokens": 4477,
+      "output_tokens": 168,
+      "estimated_cost": 0.010298,
+      "result": {
+        "checklists": {
+          "english_agent": [
+            "The English language level for this course is Level 2"
+          ],
+          "degree_agent": [
+            "A minimum of an upper second-class UK Bachelor's degree (or international qualification of an equivalent standard) in a relevant subject such as computer science, mathematics, electrical engineering, or physical sciences"
+          ],
+          "experience_agent": [
+            "Applicants must have suitable mathematics and computer programming skills; relevant work experience may also be considered"
+          ],
+          "ps_rl_agent": [
+            "A personal statement illustrating motivation, academic background, and programming experience is required",
+            "Two references are required"
+          ],
+          "academic_agent": []
+        },
+        "english_level": "level2",
+        "degree_requirement_class": "UPPER_SECOND",
+        "programme_title": "Computer Graphics, Vision and Imaging MSC",
+        "rule_set_url": "https://www.ucl.ac.uk/prospective-students/graduate/taught-degrees/computer-graphics-vision-and-imaging-msc",
+        "text_length": 20529
+      },
+      "timestamp": "2025-09-19 15:42:54",
+      "raw_response": "{\n  \"checklists\": {\n    \"english_agent\": [\n      \"The English language level for this course is Level 2\"\n    ],\n    \"degree_agent\": [\n      \"A minimum of an upper second-class UK Bachelor's degree (or international qualification of an equivalent standard) in a relevant subject such as computer science, mathematics, electrical engineering, or physical sciences\"\n    ],\n    \"experience_agent\": [\n      \"Applicants must have suitable mathematics and computer programming skills; relevant work experien",
+      "token_source": "azure_actual"
+    },
+    {
+      "url": "https://www.ucl.ac.uk/prospective-students/graduate/taught-degrees/computer-graphics-vision-and-imaging-msc",
+      "model": "gpt-4.1-native",
+      "run_number": 2,
+      "success": true,
+      "execution_time": 6.574951171875,
+      "input_tokens": 4477,
+      "output_tokens": 195,
+      "estimated_cost": 0.010514,
+      "result": {
+        "checklists": {
+          "english_agent": [
+            "Meet UCL English language requirements at Level 2"
+          ],
+          "degree_agent": [
+            "A minimum of an upper second-class UK Bachelor's degree (or international qualification of an equivalent standard) in a relevant subject such as computer science, mathematics, electrical engineering, or physical sciences"
+          ],
+          "experience_agent": [
+            "Applicants must have suitable mathematics and computer programming skills",
+            "Relevant work experience may also be considered"
+          ],
+          "ps_rl_agent": [
+            "Submit a personal statement addressing motivation for studying Computer Graphics, Vision and Imaging, reasons for choosing UCL, attractions to the programme, academic and professional background meeting programme demands, programming experience, and professional aspirations",
+            "Provide two reference letters"
+          ],
+          "academic_agent": []
+        },
+        "english_level": "level2",
+        "degree_requirement_class": "UPPER_SECOND",
+        "programme_title": "Computer Graphics, Vision and Imaging MSC",
+        "rule_set_url": "https://www.ucl.ac.uk/prospective-students/graduate/taught-degrees/computer-graphics-vision-and-imaging-msc",
+        "text_length": 20529
+      },
+      "timestamp": "2025-09-19 15:43:03",
+      "raw_response": "{\n  \"checklists\": {\n    \"english_agent\": [\n      \"Meet UCL English language requirements at Level 2\"\n    ],\n    \"degree_agent\": [\n      \"A minimum of an upper second-class UK Bachelor's degree (or international qualification of an equivalent standard) in a relevant subject such as computer science, mathematics, electrical engineering, or physical sciences\"\n    ],\n    \"experience_agent\": [\n      \"Applicants must have suitable mathematics and computer programming skills\",\n      \"Relevant work expe",
+      "token_source": "azure_actual"
+    },
+    {
+      "url": "https://www.ucl.ac.uk/prospective-students/graduate/taught-degrees/education-ma",
+      "model": "gpt-4.1-native",
+      "run_number": 1,
+      "success": true,
+      "execution_time": 7.595254898071289,
+      "input_tokens": 4611,
+      "output_tokens": 239,
+      "estimated_cost": 0.011134,
+      "result": {
+        "checklists": {
+          "english_agent": [
+            "English language level for this course is Level 2",
+            "International students may need to complete UCL Pre-Master's or Pre-sessional English courses if academic English proficiency is required"
+          ],
+          "degree_agent": [
+            "A minimum of a second-class Bachelor's degree from a UK university or an overseas qualification of an equivalent standard",
+            "Some optional modules may have additional, specific entry requirements"
+          ],
+          "experience_agent": [],
+          "ps_rl_agent": [
+            "Submit a personal statement, typed and no longer than two sides of A4 paper, uploaded on the admissions portal",
+            "Personal statement must clearly address: Why do you want to study Education? Why do you want to study the Education MA degree at IOE? How does your academic and professional background prepare you to meet the challenges of studying for our degree? What professional and personal benefits do you hope to gain from your studies?",
+            "Two references required"
+          ],
+          "academic_agent": []
+        },
+        "english_level": "level2",
+        "degree_requirement_class": "LOWER_SECOND",
+        "programme_title": "Education MA",
+        "rule_set_url": "https://www.ucl.ac.uk/prospective-students/graduate/taught-degrees/education-ma",
+        "text_length": 20511
+      },
+      "timestamp": "2025-09-19 15:43:13",
+      "raw_response": "{\n  \"checklists\": {\n    \"english_agent\": [\n      \"English language level for this course is Level 2\",\n      \"International students may need to complete UCL Pre-Master's or Pre-sessional English courses if academic English proficiency is required\"\n    ],\n    \"degree_agent\": [\n      \"A minimum of a second-class Bachelor's degree from a UK university or an overseas qualification of an equivalent standard\",\n      \"Some optional modules may have additional, specific entry requirements\"\n    ],\n    \"e",
+      "token_source": "azure_actual"
+    },
+    {
+      "url": "https://www.ucl.ac.uk/prospective-students/graduate/taught-degrees/education-ma",
+      "model": "gpt-4.1-native",
+      "run_number": 2,
+      "success": true,
+      "execution_time": 6.691169738769531,
+      "input_tokens": 4611,
+      "output_tokens": 208,
+      "estimated_cost": 0.010886,
+      "result": {
+        "checklists": {
+          "english_agent": [
+            "The English language level for this course is Level 2",
+            "International students who do not meet English requirements may take UCL Pre-Master's and Pre-sessional English courses"
+          ],
+          "degree_agent": [
+            "A minimum of a second-class Bachelor's degree from a UK university or an overseas qualification of an equivalent standard",
+            "One or two optional modules may have additional, specific entry requirements"
+          ],
+          "experience_agent": [],
+          "ps_rl_agent": [
+            "Submit a personal statement no longer than two sides of A4 addressing: why you want to study Education, why you want to study the Education MA degree at IOE, how your academic and professional background prepares you for the degree, and what benefits you hope to gain",
+            "Submit two references"
+          ],
+          "academic_agent": []
+        },
+        "english_level": "level2",
+        "degree_requirement_class": "LOWER_SECOND",
+        "programme_title": "Education MA",
+        "rule_set_url": "https://www.ucl.ac.uk/prospective-students/graduate/taught-degrees/education-ma",
+        "text_length": 20511
+      },
+      "timestamp": "2025-09-19 15:43:22",
+      "raw_response": "{\n  \"checklists\": {\n    \"english_agent\": [\n      \"The English language level for this course is Level 2\",\n      \"International students who do not meet English requirements may take UCL Pre-Master's and Pre-sessional English courses\"\n    ],\n    \"degree_agent\": [\n      \"A minimum of a second-class Bachelor's degree from a UK university or an overseas qualification of an equivalent standard\",\n      \"One or two optional modules may have additional, specific entry requirements\"\n    ],\n    \"experienc",
+      "token_source": "azure_actual"
+    },
+    {
+      "url": "https://www.ucl.ac.uk/prospective-students/graduate/taught-degrees/finance-msc",
+      "model": "gpt-4.1-native",
+      "run_number": 1,
+      "success": true,
+      "execution_time": 6.849075794219971,
+      "input_tokens": 4749,
+      "output_tokens": 230,
+      "estimated_cost": 0.011337999999999999,
+      "result": {
+        "checklists": {
+          "english_agent": [
+            "Meet UCL Level 2 English language requirement in one single test",
+            "International students may take Pre-Master's or Pre-sessional English courses to meet requirements"
+          ],
+          "degree_agent": [
+            "A minimum of an upper-second class Bachelor's degree from a UK university or an overseas qualification of equivalent standard in economics, finance, mathematics, accounting, engineering, statistics or any combination thereof",
+            "Degrees from other disciplines may be considered if the applicant can demonstrate sufficient quantitative skills",
+            "Strong GRE quantitative (162+) or overall GMAT or GMAT Focus (at least 80th percentile) scores will add weight to an application (GMAT/GRE not required)"
+          ],
+          "experience_agent": [],
+          "ps_rl_agent": [
+            "Two references required",
+            "Personal statement not required but can be submitted if the applicant wishes to communicate specific information to the admission committee"
+          ],
+          "academic_agent": []
+        },
+        "english_level": "level2",
+        "degree_requirement_class": "UPPER_SECOND",
+        "programme_title": "Finance MSC",
+        "rule_set_url": "https://www.ucl.ac.uk/prospective-students/graduate/taught-degrees/finance-msc",
+        "text_length": 21560
+      },
+      "timestamp": "2025-09-19 15:43:31",
+      "raw_response": "{\n  \"checklists\": {\n    \"english_agent\": [\n      \"Meet UCL Level 2 English language requirement in one single test\",\n      \"International students may take Pre-Master's or Pre-sessional English courses to meet requirements\"\n    ],\n    \"degree_agent\": [\n      \"A minimum of an upper-second class Bachelor's degree from a UK university or an overseas qualification of equivalent standard in economics, finance, mathematics, accounting, engineering, statistics or any combination thereof\",\n      \"Degree",
+      "token_source": "azure_actual"
+    },
+    {
+      "url": "https://www.ucl.ac.uk/prospective-students/graduate/taught-degrees/finance-msc",
+      "model": "gpt-4.1-native",
+      "run_number": 2,
+      "success": true,
+      "execution_time": 6.214231729507446,
+      "input_tokens": 4749,
+      "output_tokens": 235,
+      "estimated_cost": 0.011378,
+      "result": {
+        "checklists": {
+          "english_agent": [
+            "The English language level for this course is: Level 2",
+            "Students must meet Level 2 English in one single test"
+          ],
+          "degree_agent": [
+            "A minimum of an upper-second class Bachelor's degree from a UK university or an overseas qualification of an equivalent standard in one of the following subjects: economics, finance, mathematics, accounting, engineering, statistics or any combination thereof",
+            "Degrees from other disciplines may be considered if the applicant can demonstrate sufficient quantitative skills",
+            "GRE/GMAT are not required but strong GRE quantitative (162+) or overall GMAT or GMAT Focus (at least 80th percentile) scores will add weight to an application"
+          ],
+          "experience_agent": [],
+          "ps_rl_agent": [
+            "This course requires two references",
+            "Submitting a personal statement is not required but can be used if you wish to communicate specific information to the admission committee"
+          ],
+          "academic_agent": []
+        },
+        "english_level": "level2",
+        "degree_requirement_class": "UPPER_SECOND",
+        "programme_title": "Finance MSC",
+        "rule_set_url": "https://www.ucl.ac.uk/prospective-students/graduate/taught-degrees/finance-msc",
+        "text_length": 21560
+      },
+      "timestamp": "2025-09-19 15:43:40",
+      "raw_response": "{\n  \"checklists\": {\n    \"english_agent\": [\n      \"The English language level for this course is: Level 2\",\n      \"Students must meet Level 2 English in one single test\"\n    ],\n    \"degree_agent\": [\n      \"A minimum of an upper-second class Bachelor's degree from a UK university or an overseas qualification of an equivalent standard in one of the following subjects: economics, finance, mathematics, accounting, engineering, statistics or any combination thereof\",\n      \"Degrees from other discipli",
+      "token_source": "azure_actual"
+    }
+  ]
+}

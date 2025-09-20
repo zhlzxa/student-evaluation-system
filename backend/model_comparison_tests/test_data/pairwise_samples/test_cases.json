@@ -1,0 +1,73 @@
+{
+  "test_description": "Pairwise Comparison Agent evaluation for MIDDLE-tier applicants",
+  "programme": "Computer Graphics, Vision and Imaging MSc - UCL",
+  "gating_logic": {
+    "REJECT": "degree below Upper Second Class OR QS rank > 800",
+    "ACCEPT": "QS rank ≤ 100 AND degree score ≥ 8",
+    "MIDDLE": "meets degree requirements but not auto-accept criteria"
+  },
+  "scoring_weights": {
+    "english": 0.10,
+    "degree": 0.50,
+    "academic": 0.15,
+    "experience": 0.15,
+    "ps_rl": 0.10
+  },
+  "test_cases": [
+    {
+      "case_id": "case_1_mid_tier_comparison",
+      "description": "Mid-tier universities with different strengths",
+      "applicant_A": {
+        "description": "Sheffield University First Class",
+        "university": "University of Sheffield",
+        "qs_rank": 104,
+        "expected_weighted_score": 6.90
+      },
+      "applicant_B": {
+        "description": "Birmingham University Upper Second + research experience",
+        "university": "University of Birmingham",
+        "qs_rank": 84,
+        "expected_weighted_score": 7.05
+      },
+      "expected_winner": "depends_on_other_factors",
+      "score_difference": 0.15
+    },
+    {
+      "case_id": "case_2_china_universities",
+      "description": "Chinese universities comparison",
+      "applicant_A": {
+        "description": "Beijing Institute of Technology 85%",
+        "university": "Beijing Institute of Technology",
+        "qs_rank": 214,
+        "expected_weighted_score": 6.65
+      },
+      "applicant_B": {
+        "description": "Huazhong University 87% + publications",
+        "university": "Huazhong University of Science and Technology",
+        "qs_rank": 285,
+        "expected_weighted_score": 6.85
+      },
+      "expected_winner": "B",
+      "reasoning": "academic publications outweigh slightly better university ranking",
+      "score_difference": 0.20
+    },
+    {
+      "case_id": "case_3_identical_test",
+      "description": "Identical candidates for consistency testing",
+      "applicant_A": {
+        "description": "Bath University Upper Second Class",
+        "university": "University of Bath",
+        "qs_rank": 148,
+        "expected_weighted_score": 7.00
+      },
+      "applicant_B": {
+        "description": "Identical to applicant A",
+        "university": "University of Bath",
+        "qs_rank": 148,
+        "expected_weighted_score": 7.00
+      },
+      "expected_winner": "tie",
+      "score_difference": 0.00
+    }
+  ]
+}

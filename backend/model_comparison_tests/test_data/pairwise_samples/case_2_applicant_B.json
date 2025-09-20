@@ -1,0 +1,114 @@
+{
+  "case_id": "case_2_china_universities",
+  "applicant": "B",
+  "description": "Huazhong University 87% + publications - research-oriented",
+  "expected_weighted_score": 6.85,
+  "evaluation_data": {
+    "english": {
+      "score": 7,
+      "details": {
+        "exemption": false,
+        "test_type": "IELTS Academic",
+        "test_overall": 7.5,
+        "level": "level2",
+        "evidence": [
+          "IELTS Academic overall score 7.5 (Reading: 8.0, Writing: 7.0, Listening: 7.5, Speaking: 7.0)",
+          "Meets Level 2 English requirements for Computer Graphics programme",
+          "Test taken in July 2024, within validity period"
+        ]
+      }
+    },
+    "degree": {
+      "score": 7.0,
+      "details": {
+        "country": "China",
+        "institution": "Huazhong University of Science and Technology",
+        "meets_requirement": true,
+        "qs_rank": 285,
+        "subject_fit": true,
+        "missing_prerequisites": [],
+        "evidence": [
+          "Bachelor of Engineering in Computer Science from Huazhong University of Science and Technology",
+          "Huazhong University of Science and Technology ranked #285 in QS World University Rankings 2025",
+          "Excellent academic performance with weighted average of 87%",
+          "Strong foundation in mathematics and computer science fundamentals",
+          "Good subject alignment with Computer Graphics programme requirements"
+        ],
+        "policy_source": "UCL admissions requirements",
+        "degrees": [
+          {
+            "degree_type": "Bachelor of Engineering",
+            "field_of_study": "Computer Science",
+            "institution": "Huazhong University of Science and Technology",
+            "country": "China",
+            "grade": "87%",
+            "duration": "4 years"
+          }
+        ]
+      }
+    },
+    "academic": {
+      "score": 7.0,
+      "details": {
+        "papers": [
+          {
+            "title": "Real-time Ray Tracing Optimization for Mobile Devices",
+            "venue": "Chinese Conference on Computer Graphics",
+            "tier": "Regional conference",
+            "year": "2024",
+            "authors": "Second author with supervisor"
+          },
+          {
+            "title": "Efficient Mesh Simplification Algorithms for VR Applications",
+            "venue": "Undergraduate Research Symposium",
+            "tier": "Student conference",
+            "year": "2024",
+            "authors": "First author"
+          }
+        ],
+        "evidence": [
+          "Co-authored paper on ray tracing optimization at Chinese graphics conference",
+          "First-authored paper on mesh simplification at university research symposium",
+          "Completed extended research project on mobile graphics optimization achieving 90%",
+          "Demonstrates strong research capability and genuine interest in graphics field"
+        ]
+      }
+    },
+    "experience": {
+      "score": 3.0,
+      "details": {
+        "highlights": [
+          "University research assistant position"
+        ],
+        "evidence": [
+          "6-month research assistant position in university graphics lab",
+          "Assisted with data collection and basic algorithm implementation",
+          "Limited industry exposure, primarily academic research environment",
+          "No commercial software development experience",
+          "Focused on theoretical research rather than practical application"
+        ]
+      }
+    },
+    "ps_rl": {
+      "score": 6.5,
+      "details": {
+        "strengths": [
+          {
+            "point": "Demonstrated research experience and publications",
+            "evidence": "Personal statement shows genuine engagement with graphics research through published papers and research assistant role"
+          },
+          {
+            "point": "Strong academic reference highlighting research potential",
+            "evidence": "Research supervisor reference confirms ability to conduct independent research and contribute to publications"
+          }
+        ],
+        "weaknesses": [
+          {
+            "point": "Limited practical industry experience",
+            "evidence": "Personal statement lacks mention of industry internships or commercial software development experience"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "case_id": "case_2_china_universities",
+  "applicant": "A",
+  "description": "Beijing Institute of Technology 85% - good Chinese university",
+  "expected_weighted_score": 6.65,
+  "evaluation_data": {
+    "english": {
+      "score": 7,
+      "details": {
+        "exemption": false,
+        "test_type": "IELTS Academic",
+        "test_overall": 7.5,
+        "level": "level2",
+        "evidence": [
+          "IELTS Academic overall score 7.5 (Reading: 7.5, Writing: 7.0, Listening: 8.0, Speaking: 7.0)",
+          "Meets Level 2 English requirements for Computer Graphics programme",
+          "Test taken in August 2024, within validity period"
+        ]
+      }
+    },
+    "degree": {
+      "score": 7.5,
+      "details": {
+        "country": "China",
+        "institution": "Beijing Institute of Technology",
+        "meets_requirement": true,
+        "qs_rank": 214,
+        "subject_fit": true,
+        "missing_prerequisites": [],
+        "evidence": [
+          "Bachelor of Engineering in Computer Science from Beijing Institute of Technology",
+          "Beijing Institute of Technology ranked #214 in QS World University Rankings 2025",
+          "Strong academic performance with weighted average of 85%",
+          "Solid foundation in mathematics, algorithms, and programming",
+          "Good subject alignment with Computer Graphics programme requirements"
+        ],
+        "policy_source": "UCL admissions requirements",
+        "degrees": [
+          {
+            "degree_type": "Bachelor of Engineering",
+            "field_of_study": "Computer Science",
+            "institution": "Beijing Institute of Technology",
+            "country": "China",
+            "grade": "85%",
+            "duration": "4 years"
+          }
+        ]
+      }
+    },
+    "academic": {
+      "score": 4.0,
+      "details": {
+        "papers": [],
+        "evidence": [
+          "No academic publications found in submitted documents",
+          "Completed undergraduate thesis on 'Distributed Systems Architecture' achieving 88%",
+          "Participated in ACM-ICPC programming contest at regional level",
+          "Standard undergraduate level research work, no external publications"
+        ]
+      }
+    },
+    "experience": {
+      "score": 4.0,
+      "details": {
+        "highlights": [
+          "Internship at local tech company"
+        ],
+        "evidence": [
+          "3-month summer internship at Beijing-based software company as Development Intern",
+          "Experience with web development using Java Spring framework",
+          "Contributed to company's internal management system development",
+          "Basic industry exposure but limited scope and impact",
+          "No direct experience with graphics programming or computer vision"
+        ]
+      }
+    },
+    "ps_rl": {
+      "score": 6.0,
+      "details": {
+        "strengths": [
+          {
+            "point": "Strong technical foundation and clear motivation",
+            "evidence": "Personal statement demonstrates solid programming background and specific interest in computer graphics research"
+          }
+        ],
+        "weaknesses": [
+          {
+            "point": "Limited graphics-specific experience and research background",
+            "evidence": "Personal statement lacks mention of graphics programming projects or computer vision coursework, limited research experience"
+          }
+        ]
+      }
+    }
+  }
+}
