@@ -106,7 +106,6 @@ export default function AdmissionReviewHistoryPage() {
   };
 
   const normalizeStatus = (s: string) => (s || '').toLowerCase();
-  // Map各种后端状态到规范集合，确保筛选菜单稳定
   const canonicalizeStatus = (s: string): 'pending' | 'processing' | 'completed' | 'failed' => {
     const v = normalizeStatus(s);
     if (v === 'completed') return 'completed';
